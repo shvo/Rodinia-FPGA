@@ -1,3 +1,7 @@
 # compilation files
 *.o
 *.exe
+*.txt
+*.out
+*.csv
+*.html
