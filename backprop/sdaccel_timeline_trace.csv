@@ -1,0 +1,14 @@
+SDAccel Timeline Trace
+Generated on: 2016-06-10 09:50:08
+Profiled application: backprop.exe
+Target platform: Xilinx
+
+
+Time_msec,Name,Event,Address_Port,Size,Latency_cycles,Start_cycles,End_cycles,Latency_usec,Start_msec,End_msec,
+0.162082,clGetExtensionFunctionAddress|General,START,,,,,,,,,
+0.178281,clGetExtensionFunctionAddress|General,END,,,,,,,,,
+0.183256,clGetPlatformInfo|General,START,,,,,,,,,
+0.187889,clGetPlatformInfo|General,END,,,,,,,,,
+0.191999,clGetPlatformInfo|General,START,,,,,,,,,
+0.196028,clGetPlatformInfo|General,END,,,,,,,,,
+
