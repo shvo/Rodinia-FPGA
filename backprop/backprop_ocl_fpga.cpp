@@ -271,8 +271,9 @@ int bpnn_train_kernel(BPNN *net, float *eo, float *eh)
 	clSetKernelArg(kernel1, 6, sizeof(cl_int), (void*) &in);
 	clSetKernelArg(kernel1, 7, sizeof(cl_int), (void*) &hid);
   
-	err = clEnqueueNDRangeKernel(cmd_queue, kernel1, 2, NULL, global_work, local_work, 0, 0, 0);
-	if(err != CL_SUCCESS) { printf("ERROR: 1  clEnqueueNDRangeKernel()=>%d failed\n", err); return -1; }	
+	err = clEnqueueNDRangeKernel(cmd_queue, kernel1, 3, NULL, global_work, local_work, 0, NULL, 0);
+        if(err == CL_INVALID_KERNEL) {printf("Error is invalid kernel\n");}
+	if(err != CL_SUCCESS) { printf("ERROR: 1 kernel1 clEnqueueNDRangeKernel()=>%d failed\n", err); return -1; }	
   
 	err = clEnqueueReadBuffer(cmd_queue, hidden_partial_sum, 1, 0, num_blocks * WIDTH * sizeof(float), partial_sum, 0, 0, 0);
 	if(err != CL_SUCCESS) { printf("ERROR: 1  clEnqueueReadBuffer: partial sum\n"); return -1; }	

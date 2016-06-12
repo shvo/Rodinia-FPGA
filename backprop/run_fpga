@@ -1,4 +1,5 @@
-./backprop_fpga.exe 65536
+./backprop_fpga.exe 1024
+#./backprop_fpga.exe 65536
 #./backprop_fpga.exe 131072
 #./backprop_fpga.exe 262144
 #./backprop_fpga.exe 524288
