@@ -13,3 +13,6 @@
 
 # temporary files
 *.swp
+
+# data files
+*.pgm
