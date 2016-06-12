@@ -3,12 +3,13 @@
 *.exe
 *.txt
 *.out
-*.csv
+*.csv*
 *.html
 *.xclbin
 *xocc*
 *.Xil*
 *.ll
+*.~*
 
 # temporary files
 *.swp

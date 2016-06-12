@@ -1,0 +1,1 @@
+/opt/CodeXL_2.1-228/CodeXLGpuProfiler -p -o ./result_profile.csv  ./backprop_gpu.exe 1024
