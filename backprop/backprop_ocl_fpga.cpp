@@ -205,9 +205,10 @@ int bpnn_train_kernel(BPNN *net, float *eo, float *eh)
 	cl_kernel kernel1;
 	cl_kernel kernel2;
 	kernel1 = clCreateKernel(prog, kernel_bp1, &err);  
+        if(err != CL_SUCCESS) { printf("ERROR: clCreateKernel(kernel1) 0 => %d\n", err); return -1; }
 	kernel2 = clCreateKernel(prog, kernel_bp2, &err);  
-	if(err != CL_SUCCESS) { printf("ERROR: clCreateKernel() 0 => %d\n", err); return -1; }
-	clReleaseProgram(prog);
+	if(err != CL_SUCCESS) { printf("ERROR: clCreateKernel(kernel2) 0 => %d\n", err); return -1; }
+	/* clReleaseProgram(prog); */
 	
 	float *input_weights_one_dim;
     float *input_weights_prev_one_dim;
