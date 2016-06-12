@@ -1,0 +1,8 @@
+./backprop_gpu.exe 65536
+#./backprop_gpu.exe 131072
+#./backprop_gpu.exe 262144
+#./backprop_gpu.exe 524288
+#./backprop_gpu.exe 1048576
+#./backprop_gpu.exe 2097152
+#./backprop_gpu.exe 4194304
+#./backprop_gpu.exe 8388608

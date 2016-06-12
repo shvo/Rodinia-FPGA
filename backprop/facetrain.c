@@ -20,9 +20,10 @@ void backprop_face()
   load(net);
   //entering the training kernel, only one iteration
   printf("Starting training kernel\n");
-  bpnn_train_kernel(net, &out_err, &hid_err);
+  int err = bpnn_train_kernel(net, &out_err, &hid_err);
   bpnn_free(net);
-  printf("\nFinish the training for one iteration\n");
+  if(err == -1) printf("The bpnn_train_kernel is failed\n");
+  else printf("\nFinish the training for one iteration\n");
 }
 
 int setup(int argc, char **argv)

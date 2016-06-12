@@ -1,8 +1,0 @@
-./backprop.exe 65536
-#./backprop.exe 131072
-#./backprop.exe 262144
-#./backprop.exe 524288
-#./backprop.exe 1048576
-#./backprop.exe 2097152
-#./backprop.exe 4194304
-#./backprop.exe 8388608
