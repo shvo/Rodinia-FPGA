@@ -1,35 +1,35 @@
 #include "./../main.h"
 __kernel void 
 extract_kernel(long d_Ne,
-				__global fp* d_I){											// pointer to input image (DEVICE GLOBAL MEMORY)
+	       __global fp* d_I){	      // pointer to input image (DEVICE GLOBAL MEMORY)
 
 	// indexes
-	int bx = get_group_id(0);												// get current horizontal block index
-	int tx = get_local_id(0);													// get current horizontal thread index
-	int ei = (bx*NUMBER_THREADS)+tx;										// unique thread id, more threads than actual elements !!!
+	int bx = get_group_id(0);	      // get current horizontal block index
+	int tx = get_local_id(0);	      // get current horizontal thread index
+	int ei = (bx*NUMBER_THREADS)+tx;      // unique thread id, more threads than actual elements !!!
 
 	// copy input to output & log uncompress
-	if(ei<d_Ne){															// do only for the number of elements, omit extra threads
+	if(ei<d_Ne){			      // do only for the number of elements, omit extra threads
 
-		d_I[ei] = exp(d_I[ei]/255);												// exponentiate input IMAGE and copy to output image
+		d_I[ei] = exp(d_I[ei]/255);   // exponentiate input IMAGE and copy to output image
 
 	}
 
 }
 
 __kernel void 
-prepare_kernel(	long d_Ne,
-				__global fp* d_I,											// pointer to output image (DEVICE GLOBAL MEMORY)
-				__global fp* d_sums,										// pointer to input image (DEVICE GLOBAL MEMORY)
-				__global fp* d_sums2){
+prepare_kernel(long d_Ne,
+	       __global fp* d_I,	      // pointer to output image (DEVICE GLOBAL MEMORY)
+	       __global fp* d_sums,	      // pointer to input image (DEVICE GLOBAL MEMORY)
+	       __global fp* d_sums2){
 
 	// indexes
-	int bx = get_group_id(0);												// get current horizontal block index
-	int tx = get_local_id(0);												// get current horizontal thread index
-	int ei = (bx*NUMBER_THREADS)+tx;										// unique thread id, more threads than actual elements !!!
+	int bx = get_group_id(0);	     // get current horizontal block index
+	int tx = get_local_id(0);	     // get current horizontal thread index
+	int ei = (bx*NUMBER_THREADS)+tx;     // unique thread id, more threads than actual elements !!!
 
 	// copy input to output & log uncompress
-	if(ei<d_Ne){															// do only for the number of elements, omit extra threads
+	if(ei<d_Ne){			     // do only for the number of elements, omit extra threads
 
 		d_sums[ei] = d_I[ei];
 		d_sums2[ei] = d_I[ei]*d_I[ei];
@@ -39,30 +39,30 @@ prepare_kernel(	long d_Ne,
 }
 
 __kernel void 
-reduce_kernel(	long d_Ne,													// number of elements in array
-				long d_no,													// number of sums to reduce
-				int d_mul,													// increment
-				__global fp* d_sums,										// pointer to partial sums variable (DEVICE GLOBAL MEMORY)
-				__global fp* d_sums2,
-				int gridDim){
+reduce_kernel(long d_Ne,		    // number of elements in array
+	      long d_no,		    // number of sums to reduce
+	      int d_mul,		    // increment
+	      __global fp* d_sums,          // pointer to partial sums variable (DEVICE GLOBAL MEMORY)
+	      __global fp* d_sums2,
+	      int gridDim){
 
 	// indexes
-    int bx = get_group_id(0);												// get current horizontal block index
-	int tx = get_local_id(0);												// get current horizontal thread index
-	int ei = (bx*NUMBER_THREADS)+tx;										// unique thread id, more threads than actual elements !!!
+    int bx = get_group_id(0);								// get current horizontal block index
+	int tx = get_local_id(0);							// get current horizontal thread index
+	int ei = (bx*NUMBER_THREADS)+tx;						// unique thread id, more threads than actual elements !!!
 	// int gridDim = (int)get_group_size(0)/(int)get_local_size(0);			// number of workgroups
 	int nf = NUMBER_THREADS-(gridDim*NUMBER_THREADS-d_no);				// number of elements assigned to last block
-	int df = 0;															// divisibility factor for the last block
+	int df = 0;									// divisibility factor for the last block
 
 	// statistical
-	__local fp d_psum[NUMBER_THREADS];										// data for block calculations allocated by every block in its shared memory
+	__local fp d_psum[NUMBER_THREADS];						// data for block calculations allocated by every block in its shared memory
 	__local fp d_psum2[NUMBER_THREADS];
 
 	// counters
 	int i;
 
 	// copy data to shared memory
-	if(ei<d_no){															// do only for the number of elements, omit extra threads
+	if(ei<d_no){									// do only for the number of elements, omit extra threads
 
 		d_psum[tx] = d_sums[ei*d_mul];
 		d_psum2[tx] = d_sums2[ei*d_mul];
@@ -150,20 +150,20 @@ reduce_kernel(	long d_Ne,													// number of elements in array
 
 __kernel void 
 srad_kernel(fp d_lambda, 
-			int d_Nr, 
-			int d_Nc, 
-			long d_Ne, 
-			__global int* d_iN, 
-			__global int* d_iS, 
-			__global int* d_jE, 
-			__global int* d_jW, 
-			__global fp* d_dN, 
-			__global fp* d_dS, 
-			__global fp* d_dE, 
-			__global fp* d_dW, 
-			fp d_q0sqr, 
-			__global fp* d_c, 
-			__global fp* d_I){
+	    int d_Nr, 
+	    int d_Nc, 
+	    long d_Ne, 
+	    __global int* d_iN, 
+	    __global int* d_iS, 
+	    __global int* d_jE, 
+	    __global int* d_jW, 
+	    __global fp* d_dN, 
+	    __global fp* d_dS, 
+	    __global fp* d_dE, 
+	    __global fp* d_dW, 
+	    fp d_q0sqr, 
+	    __global fp* d_c, 
+	    __global fp* d_I){
 
 	// indexes
     int bx = get_group_id(0);												// get current horizontal block index
@@ -234,20 +234,20 @@ srad_kernel(fp d_lambda,
 // BUG, IF STILL PRESENT, COULD BE SOMEWHERE IN THIS CODE, MEMORY ACCESS OUT OF BOUNDS
 
 __kernel void 
-srad2_kernel(	fp d_lambda, 
-				int d_Nr, 
-				int d_Nc, 
-				long d_Ne, 
-				__global int* d_iN, 
-				__global int* d_iS, 
-				__global int* d_jE, 
-				__global int* d_jW,
-				__global fp* d_dN, 
-				__global fp* d_dS, 
-				__global fp* d_dE, 
-				__global fp* d_dW, 
-				__global fp* d_c, 
-				__global fp* d_I){
+srad2_kernel(fp d_lambda, 
+	     int d_Nr, 
+	     int d_Nc, 
+	     long d_Ne, 
+	     __global int* d_iN, 
+	     __global int* d_iS, 
+	     __global int* d_jE, 
+	     __global int* d_jW,
+	     __global fp* d_dN, 
+	     __global fp* d_dS, 
+	     __global fp* d_dE, 
+	     __global fp* d_dW, 
+	     __global fp* d_c, 
+	     __global fp* d_I){
 
 	// indexes
     int bx = get_group_id(0);												// get current horizontal block index
@@ -288,7 +288,7 @@ srad2_kernel(	fp d_lambda,
 
 __kernel void 
 compress_kernel(long d_Ne,
-				__global fp* d_I){										// pointer to output image (DEVICE GLOBAL MEMORY)
+		__global fp* d_I){										// pointer to output image (DEVICE GLOBAL MEMORY)
 
 	// indexes
 	int bx = get_group_id(0);												// get current horizontal block index
