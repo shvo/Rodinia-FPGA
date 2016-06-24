@@ -162,20 +162,20 @@ main(	int argc,
 	// 	KERNEL
 	//======================================================================================================================================================150
 
-	kernel_gpu_opencl_wrapper(	image,											// input image
-								Nr,												// IMAGE nbr of rows
-								Nc,												// IMAGE nbr of cols
-								Ne,												// IMAGE nbr of elem
-								niter,											// nbr of iterations
-								lambda,											// update step size
-								NeROI,											// ROI nbr of elements
-								iN,
-								iS,
-								jE,
-								jW,
-								iter,											// primary loop
-								mem_size_i,
-								mem_size_j);
+	kernel_gpu_opencl_wrapper( image,			    // input image
+				   Nr,				    // IMAGE nbr of rows
+				   Nc,				    // IMAGE nbr of cols
+				   Ne,				    // IMAGE nbr of elem
+				   niter,			    // nbr of iterations
+				   lambda,			    // update step size
+				   NeROI,			    // ROI nbr of elements
+				   iN,
+				   iS,
+				   jE,
+				   jW,
+				   iter,			    // primary loop
+				   mem_size_i,
+				   mem_size_j);
 
 	time4 = get_time();
 
