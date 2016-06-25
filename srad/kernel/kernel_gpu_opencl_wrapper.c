@@ -235,6 +235,13 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	//	CREATE Kernels
 	//====================================================================================================100
 
+        cl_kernel extract_kernel;
+        cl_kernel prepare_kernel;
+        cl_kernel reduce_kernel;
+        cl_kernel srad_kernel;
+        cl_kernel srad2_kernel;
+        cl_kernel compress_kernel;
+
         /*
         printf("begin to create kernel\n");
 
@@ -447,7 +454,7 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	//======================================================================================================================================================150
         char* extract_kernel_file = "./binary/srad_extract_kernel_default.xclbin";
         char* extract_kernel_name = "extract_kernel";
-        cl_kernel extract_kernel = make_kernel(context, program, device, extract_kernel_file, extract_kernel_name);
+        extract_kernel = make_kernel(context, program, device, extract_kernel_file, extract_kernel_name);
 
 	//====================================================================================================100
 	//	set arguments
@@ -463,18 +470,19 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	//	launch kernel
 	//====================================================================================================100
 
-	error = clEnqueueNDRangeKernel(	command_queue, extract_kernel, 1, NULL, global_work_size, local_work_size, 0, NULL, NULL);
+	error = clEnqueueNDRangeKernel(command_queue, extract_kernel, 1, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
-        printf("extract_kernel is executed\n");
-
+        
 	//====================================================================================================100
 	//	Synchronization - wait for all operations in the command queue so far to finish
 	//====================================================================================================100
 
-	// error = clFinish(command_queue);
-	// if (error != CL_SUCCESS) 
-		// fatal_CL(error, __LINE__);
+	error = clFinish(command_queue);
+	if (error != CL_SUCCESS) 
+		fatal_CL(error, __LINE__);
+        printf("extract_kernel is executed\n");
+
 
 	//====================================================================================================100
 	//	End
@@ -489,27 +497,15 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	//====================================================================================================100
         char* prepare_kernel_file = "./binary/srad_prepare_kernel_default.xclbin";
         char* prepare_kernel_name = "prepare_kernel";
-        cl_kernel prepare_kernel = make_kernel(context, program, device, prepare_kernel_file, prepare_kernel_name);
-
-	error = clSetKernelArg(prepare_kernel, 0, sizeof(long), (void *) &Ne);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(prepare_kernel, 1, sizeof(cl_mem), (void *) &d_I);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(	prepare_kernel, 2, sizeof(cl_mem), (void *) &d_sums);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(	prepare_kernel, 3, sizeof(cl_mem), (void *) &d_sums2);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
+        //cl_kernel prepare_kernel;        
+        printf("prepare_kernel is declared");
 
 	//====================================================================================================100
 	//	Reduce Kernel
 	//====================================================================================================100
         char* reduce_kernel_file = "./binary/srad_reduce_kernel_default.xclbin";
         char* reduce_kernel_name = "reduce_kernel";
-        cl_kernel reduce_kernel = make_kernel(context, program, device, reduce_kernel_file, reduce_kernel_name);
+        //cl_kernel reduce_kernel;
 
 	int blocks2_x;
 	int blocks2_work_size;
@@ -524,125 +520,20 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	fp varROI;
 	fp q0sqr;
 
-	error = clSetKernelArg(	reduce_kernel, 
-							0, 
-							sizeof(long), 
-							(void *) &Ne);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(	reduce_kernel, 
-							3, 
-							sizeof(cl_mem), 
-							(void *) &d_sums);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(	reduce_kernel, 
-							4, 
-							sizeof(cl_mem), 
-							(void *) &d_sums2);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-
 	//====================================================================================================100
 	//	SRAD Kernel
 	//====================================================================================================100
         char* srad_kernel_file = "./binary/srad_srad_kernel_default.xclbin";
         char* srad_kernel_name = "srad_kernel";
-        cl_kernel srad_kernel = make_kernel(context, program, device, srad_kernel_file, srad_kernel_name);
-
-	error = clSetKernelArg(srad_kernel, 0, sizeof(fp), (void *) &lambda);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 1, sizeof(int), (void *) &Nr);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 2, sizeof(int), (void *) &Nc);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 3, sizeof(long), (void *) &Ne);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 4, sizeof(cl_mem), (void *) &d_iN);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 5, sizeof(cl_mem), (void *) &d_iS);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 6, sizeof(cl_mem), (void *) &d_jE);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 7, sizeof(cl_mem), (void *) &d_jW);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 8, sizeof(cl_mem), (void *) &d_dN);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 9, sizeof(cl_mem), (void *) &d_dS);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 10, sizeof(cl_mem), (void *) &d_dW);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 11, sizeof(cl_mem), (void *) &d_dE);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad_kernel, 13, sizeof(cl_mem), (void *) &d_c);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(	srad_kernel, 14, sizeof(cl_mem), (void *) &d_I);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
+        //cl_kernel srad_kernel;
 
 	//====================================================================================================100
 	//	SRAD2 Kernel
 	//====================================================================================================100
         char* srad2_kernel_file = "./binary/srad_srad2_kernel_default.xclbin";
         char* srad2_kernel_name = "srad2_kernel";
-        cl_kernel srad2_kernel = make_kernel(context, program, device, srad2_kernel_file, srad2_kernel_name);
-
-	error = clSetKernelArg(srad2_kernel, 0, sizeof(fp), (void *) &lambda);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 1, sizeof(int), (void *) &Nr);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 2, sizeof(int), (void *) &Nc);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 3, sizeof(long), (void *) &Ne);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 4, sizeof(cl_mem), (void *) &d_iN);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 5, sizeof(cl_mem), (void *) &d_iS);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 6, sizeof(cl_mem), (void *) &d_jE);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 7, sizeof(cl_mem), (void *) &d_jW);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 8, sizeof(cl_mem), (void *) &d_dN);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 9, sizeof(cl_mem), (void *) &d_dS);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 10, sizeof(cl_mem), (void *) &d_dW);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 11, sizeof(cl_mem), (void *) &d_dE);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 12, sizeof(cl_mem), (void *) &d_c);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-	error = clSetKernelArg(srad2_kernel, 13, sizeof(cl_mem), (void *) &d_I);
-	if (error != CL_SUCCESS) 
-		fatal_CL(error, __LINE__);
-
+        //cl_kernel srad2_kernel;
+ 
 	//====================================================================================================100
 	//	End
 	//====================================================================================================100
@@ -656,12 +547,32 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	// execute main loop
 	for (iter=0; iter<niter; iter++){   // do for the number of iterations input parameter
 
-		printf("%d ", iter);
+		printf("%d \n", iter);
 		fflush(NULL);
 
 		//====================================================================================================100
 		// Prepare kernel
 		//====================================================================================================100
+
+                //program = make_program(context, program, device, prepare_kernel_file);
+                //printf("prepare.xclbin is loaded\n");
+                prepare_kernel_file = "./binary/srad_prepare_kernel_default.xclbin";
+                prepare_kernel_name = "prepare_kernel";
+                prepare_kernel = make_kernel(context, program, device, prepare_kernel_file, prepare_kernel_name);
+
+	        error = clSetKernelArg(prepare_kernel, 0, sizeof(long), (void *) &Ne);
+	        if (error != CL_SUCCESS) 
+		fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(prepare_kernel, 1, sizeof(cl_mem), (void *) &d_I);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(prepare_kernel, 2, sizeof(cl_mem), (void *) &d_sums);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(prepare_kernel, 3, sizeof(cl_mem), (void *) &d_sums2);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+                printf("prepare_kernel is created and parameters are set\n");
 
 		// launch kernel
 		error = clEnqueueNDRangeKernel(command_queue, prepare_kernel, 1, NULL, global_work_size, local_work_size, 0, NULL, NULL);
@@ -669,13 +580,28 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 			fatal_CL(error, __LINE__);
 
 		// synchronize
-		// error = clFinish(command_queue);
-		// if (error != CL_SUCCESS) 
-			// fatal_CL(error, __LINE__);
+		error = clFinish(command_queue);
+		if (error != CL_SUCCESS) 
+			fatal_CL(error, __LINE__);
+                printf("prepare kernel is executed\n");
 
 		//====================================================================================================100
 		//	Reduce Kernel - performs subsequent reductions of sums
 		//====================================================================================================100
+                //program = make_program(context, program, device, reduce_kernel_file);
+                //printf("reduce.xclbin is loaded\n");
+                reduce_kernel = make_kernel(context, program, device, reduce_kernel_file, reduce_kernel_name);
+
+	        error = clSetKernelArg(reduce_kernel, 0, sizeof(long), (void *) &Ne);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(reduce_kernel, 3, sizeof(cl_mem), (void *) &d_sums);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(reduce_kernel, 4, sizeof(cl_mem), (void *) &d_sums2);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+                printf("reduce_kernel is created and parameters are set\n");
 
 		// initial values
 		blocks2_work_size = blocks_work_size;							// original number of blocks
@@ -687,51 +613,37 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 		while(blocks2_work_size != 0){
 
 			// set arguments that were uptaded in this loop
-			error = clSetKernelArg(	reduce_kernel, 
-									1, 
-									sizeof(long), 
-									(void *) &no);
-			if (error != CL_SUCCESS) 
-				fatal_CL(error, __LINE__);
-			error = clSetKernelArg(	reduce_kernel, 
-									2, 
-									sizeof(int), 
-									(void *) &mul);
+			error = clSetKernelArg(reduce_kernel, 1, sizeof(long), (void *) &no);
 			if (error != CL_SUCCESS) 
 				fatal_CL(error, __LINE__);
 
-			error = clSetKernelArg(	reduce_kernel, 
-									5, 
-									sizeof(int), 
-									(void *) &blocks2_work_size);
+			error = clSetKernelArg(reduce_kernel, 2, sizeof(int), (void *) &mul);
+			if (error != CL_SUCCESS) 
+				fatal_CL(error, __LINE__);
+
+			error = clSetKernelArg(reduce_kernel, 5, sizeof(int), (void *) &blocks2_work_size);
 			if (error != CL_SUCCESS) 
 				fatal_CL(error, __LINE__);
 
 			// launch kernel
-			error = clEnqueueNDRangeKernel(	command_queue, 
-											reduce_kernel, 
-											1, 
-											NULL, 
-											global_work_size2, 
-											local_work_size, 
-											0, 
-											NULL, 
-											NULL);
+			error = clEnqueueNDRangeKernel(command_queue, reduce_kernel, 1, NULL, global_work_size2, local_work_size, 0, NULL, NULL);
+
 			if (error != CL_SUCCESS) 
 				fatal_CL(error, __LINE__);
 
 			// synchronize
-			// error = clFinish(command_queue);
-			// if (error != CL_SUCCESS) 
-				// fatal_CL(error, __LINE__);
+			error = clFinish(command_queue);
+			if (error != CL_SUCCESS) 
+			      fatal_CL(error, __LINE__);
+                        printf("reduce kernel is executed\n");
 
 			// update execution parameters
-			no = blocks2_work_size;												// get current number of elements
+			no = blocks2_work_size;				  // get current number of elements
 			if(blocks2_work_size == 1){
 				blocks2_work_size = 0;
 			}
 			else{
-				mul = mul * NUMBER_THREADS;										// update the increment
+				mul = mul * NUMBER_THREADS;						// update the increment
 				blocks_x = blocks2_work_size/(int)local_work_size[0];			// number of blocks
 				if (blocks2_work_size % (int)local_work_size[0] != 0){			// compensate for division remainder above by adding one grid
 					blocks_x = blocks_x + 1;
@@ -739,94 +651,161 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 				blocks2_work_size = blocks_x;
 				global_work_size2[0] = blocks2_work_size * (int)local_work_size[0];
 			}
+                        //printf("blocks2_work_size = %d\n", blocks2_work_size);
 
 		}
 
+                printf("begin to read memory buffer: dsums and d_sums2\n");
 		// copy total sums to device
-		error = clEnqueueReadBuffer(command_queue,
-									d_sums,
-									CL_TRUE,
-									0,
-									mem_size_single,
-									&total,
-									0,
-									NULL,
-									NULL);
+		error = clEnqueueReadBuffer(command_queue, d_sums, CL_TRUE, 0, mem_size_single, &total, 0, NULL, NULL);
 		if (error != CL_SUCCESS) 
 			fatal_CL(error, __LINE__);
+                printf("d_sums is read\n");
 
-		error = clEnqueueReadBuffer(command_queue,
-									d_sums2,
-									CL_TRUE,
-									0,
-									mem_size_single,
-									&total2,
-									0,
-									NULL,
-									NULL);
+		error = clEnqueueReadBuffer(command_queue, d_sums2, CL_TRUE, 0, mem_size_single, &total2, 0, NULL, NULL);
 		if (error != CL_SUCCESS) 
 			fatal_CL(error, __LINE__);
+                printf("d_sums2 is read\n");
 
 		//====================================================================================================100
 		// calculate statistics
 		//====================================================================================================100
-		
-		meanROI	= total / (fp)(NeROI);										// gets mean (average) value of element in ROI
-		meanROI2 = meanROI * meanROI;										//
-		varROI = (total2 / (fp)(NeROI)) - meanROI2;							// gets variance of ROI								
-		q0sqr = varROI / meanROI2;											// gets standard deviation of ROI
+		meanROI	= total / (fp)(NeROI);					  // gets mean (average) value of element in ROI
+		meanROI2 = meanROI * meanROI;					  //
+		varROI = (total2 / (fp)(NeROI)) - meanROI2;			  // gets variance of ROI								
+		q0sqr = varROI / meanROI2;					  // gets standard deviation of ROI
 
 		//====================================================================================================100
 		// execute srad kernel
 		//====================================================================================================100
 
+                //program = make_program(context, program, device, srad_kernel_file);
+                //printf("srad.xclbin is loaded\n");
+                srad_kernel = make_kernel(context, program, device, srad_kernel_file, srad_kernel_name);
+
+	        error = clSetKernelArg(srad_kernel, 0, sizeof(fp), (void *) &lambda);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 1, sizeof(int), (void *) &Nr);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 2, sizeof(int), (void *) &Nc);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 3, sizeof(long), (void *) &Ne);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 4, sizeof(cl_mem), (void *) &d_iN);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 5, sizeof(cl_mem), (void *) &d_iS);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 6, sizeof(cl_mem), (void *) &d_jE);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 7, sizeof(cl_mem), (void *) &d_jW);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 8, sizeof(cl_mem), (void *) &d_dN);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 9, sizeof(cl_mem), (void *) &d_dS);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 10, sizeof(cl_mem), (void *) &d_dW);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 11, sizeof(cl_mem), (void *) &d_dE);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad_kernel, 13, sizeof(cl_mem), (void *) &d_c);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(	srad_kernel, 14, sizeof(cl_mem), (void *) &d_I);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+                printf("srad_kernel is created and parameters are set\n");
+
 		// set arguments that were uptaded in this loop
-		error = clSetKernelArg(	srad_kernel, 
-							12, 
-							sizeof(fp), 
-							(void *) &q0sqr);
+		error = clSetKernelArg(srad_kernel, 12, sizeof(fp), (void *) &q0sqr);
 		if (error != CL_SUCCESS) 
 			fatal_CL(error, __LINE__);
 
 		// launch kernel
-		error = clEnqueueNDRangeKernel(	command_queue, 
-										srad_kernel, 
-										1, 
-										NULL, 
-										global_work_size, 
-										local_work_size, 
-										0, 
-										NULL, 
-										NULL);
+		error = clEnqueueNDRangeKernel(command_queue, srad_kernel, 1, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 		if (error != CL_SUCCESS) 
 			fatal_CL(error, __LINE__);
 
 		// synchronize
-		// error = clFinish(command_queue);
-		// if (error != CL_SUCCESS) 
-			// fatal_CL(error, __LINE__);
+		error = clFinish(command_queue);
+		if (error != CL_SUCCESS) 
+			fatal_CL(error, __LINE__);
+                        
+                printf("srad kernel is executed\n");
 
 		//====================================================================================================100
 		// execute srad2 kernel
 		//====================================================================================================100
 
+                //program = make_program(context, program, device, srad2_kernel_file);
+                //printf("srad2.xclbin is loaded\n");
+                srad2_kernel = make_kernel(context, program, device, srad2_kernel_file, srad2_kernel_name);
+
+	        error = clSetKernelArg(srad2_kernel, 0, sizeof(fp), (void *) &lambda);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 1, sizeof(int), (void *) &Nr);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 2, sizeof(int), (void *) &Nc);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 3, sizeof(long), (void *) &Ne);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 4, sizeof(cl_mem), (void *) &d_iN);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 5, sizeof(cl_mem), (void *) &d_iS);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 6, sizeof(cl_mem), (void *) &d_jE);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 7, sizeof(cl_mem), (void *) &d_jW);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 8, sizeof(cl_mem), (void *) &d_dN);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 9, sizeof(cl_mem), (void *) &d_dS);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 10, sizeof(cl_mem), (void *) &d_dW);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 11, sizeof(cl_mem), (void *) &d_dE);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 12, sizeof(cl_mem), (void *) &d_c);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+	        error = clSetKernelArg(srad2_kernel, 13, sizeof(cl_mem), (void *) &d_I);
+	        if (error != CL_SUCCESS) 
+		    fatal_CL(error, __LINE__);
+                printf("srad2_kernel is created and parameters are set\n");
+
 		// launch kernel
-		error = clEnqueueNDRangeKernel(	command_queue, 
-										srad2_kernel, 
-										1, 
-										NULL, 
-										global_work_size, 
-										local_work_size, 
-										0, 
-										NULL, 
-										NULL);
+		error = clEnqueueNDRangeKernel(command_queue, srad2_kernel, 1, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 		if (error != CL_SUCCESS) 
 			fatal_CL(error, __LINE__);
 
 		// synchronize
-		// error = clFinish(command_queue);
-		// if (error != CL_SUCCESS) 
-			// fatal_CL(error, __LINE__);
+		error = clFinish(command_queue);
+		if (error != CL_SUCCESS) 
+			fatal_CL(error, __LINE__);
+                printf("srad2 kernel is executed\n");
 
 		//====================================================================================================100
 		// End
@@ -841,7 +820,7 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	//======================================================================================================================================================150
         char* compress_kernel_file = "./binary/srad_compress_kernel_default.xclbin";
         char* compress_kernel_name = "compress_kernel";
-        cl_kernel compress_kernel = make_kernel(context, program, device, compress_kernel_file, compress_kernel_name);
+        compress_kernel = make_kernel(context, program, device, compress_kernel_file, compress_kernel_name);
 
 	//====================================================================================================100
 	// set parameters
@@ -853,6 +832,7 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	error = clSetKernelArg(compress_kernel, 1, sizeof(cl_mem), (void *) &d_I);
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
+        printf("compress kernel is created and parameters are set\n");
 
 	//====================================================================================================100
 	// launch kernel
@@ -861,6 +841,7 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	error = clEnqueueNDRangeKernel(command_queue, compress_kernel, 1, NULL, global_work_size, local_work_size, 0, NULL, NULL);
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
+        printf("compress kernel is executed\n");
 
 	//====================================================================================================100
 	// synchronize
@@ -878,9 +859,11 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	// 	COPY RESULTS BACK TO CPU
 	//======================================================================================================================================================150
 
+        printf("begin to reade memory buffer d_I\n");
 	error = clEnqueueReadBuffer(command_queue, d_I, CL_TRUE, 0, mem_size, image, 0, NULL, NULL);
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
+        printf("d_I is read\n");
 
 	// int i;
 	// for(i=0; i<100; i++){
@@ -910,9 +893,11 @@ kernel_gpu_opencl_wrapper( fp* image,      // input image
 	error = clReleaseKernel(compress_kernel);
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
+        /*
 	error = clReleaseProgram(program);
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
+        */
 
 	// common_change
 	error = clReleaseMemObject(d_I);
