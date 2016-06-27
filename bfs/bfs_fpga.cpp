@@ -12,8 +12,74 @@
 
 #include "CLHelper.h"
 #include "util.h"
+#include "./util/opencl/opencl.h"
 
 #define MAX_THREADS_PER_BLOCK 256
+
+static void* smalloc(size_t size) {
+	void* ptr;
+
+	ptr = malloc(size);
+
+	if (ptr == NULL) {
+		printf("Error: Cannot allocate memory\n");
+		printf("Test failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return ptr;
+}
+
+static int load_file_to_memory(const char *filename, char **result) {
+	unsigned int size;
+
+	FILE *f = fopen(filename, "rb");
+	if (f == NULL) {
+		*result = NULL;
+		printf("Error: Could not read file %s\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	*result = (char *) smalloc(sizeof(char)*(size+1));
+
+	if (size != fread(*result, sizeof(char), size, f)) {
+		free(*result);
+		printf("Error: read of kernel failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	fclose(f);
+	(*result)[size] = 0;
+
+	return size;
+}
+
+cl_kernel make_kernel(cl_context context, cl_program program, cl_device_id device,  char* krnl_file, char* krnl_name) {
+        char *krnl_bin;
+        //char *krnl_file = "./binary/srad_extract_kernel_default.xclbin";
+	const size_t krnl_size = load_file_to_memory(krnl_file, &krnl_bin);
+
+        int err;
+        program = clCreateProgramWithBinary(context, 1, &device, &krnl_size, (const unsigned char**) &krnl_bin, NULL, &err);
+        if ((!program) || (err!=CL_SUCCESS)) {
+	    printf("Error: Failed to create compute program from binary %d!\n", err);
+	    printf("Test failed\n");
+	    exit(EXIT_FAILURE);
+	}
+        err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+        if (err != CL_SUCCESS) 
+	    fatal_CL(err, __LINE__);
+
+        cl_kernel kernel;
+	kernel = clCreateKernel(program, krnl_name, &err);
+	if (err != CL_SUCCESS) 
+		fatal_CL(err, __LINE__);
+        return kernel;
+}
 
 //Structure to hold a node information
 struct Node
@@ -79,6 +145,7 @@ void run_bfs_gpu(int no_of_nodes, Node *h_graph_nodes, int edge_list_size, \
 	try{
 		//--1 transfer data from host to device
 		_clInit();			
+                printf("OpenCL is initiated\n");
 		d_graph_nodes = _clMalloc(no_of_nodes*sizeof(Node), h_graph_nodes);
 		d_graph_edges = _clMalloc(edge_list_size*sizeof(int), h_graph_edges);
 		d_graph_mask = _clMallocRW(no_of_nodes*sizeof(char), h_graph_mask);
@@ -104,6 +171,11 @@ void run_bfs_gpu(int no_of_nodes, Node *h_graph_nodes, int edge_list_size, \
 		kernel_timer.start();
 #endif
 		do{
+                        char* BFS_1_kernel_file = "./binary/BFS_1_default.xclbin";
+                        char* BFS_1_kernel_name = "BFS_1";
+                        cl_kernel kernel_0 = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], BFS_1_kernel_file, BFS_1_kernel_name); 
+                        oclHandles.kernel.push_back(kernel_0);
+
 			h_over = false;
 			_clMemcpyH2D(d_over, sizeof(char), &h_over);
 			//--kernel 0
@@ -116,11 +188,16 @@ void run_bfs_gpu(int no_of_nodes, Node *h_graph_nodes, int edge_list_size, \
 			_clSetArgs(kernel_id, kernel_idx++, d_graph_visited);
 			_clSetArgs(kernel_id, kernel_idx++, d_cost);
 			_clSetArgs(kernel_id, kernel_idx++, &no_of_nodes, sizeof(int));
-			
+		 
 			//int work_items = no_of_nodes;
 			_clInvokeKernel(kernel_id, no_of_nodes, work_group_size);
 			
 			//--kernel 1
+                        char* BFS_2_kernel_file = "./binary/BFS_2_default.xclbin";
+                        char* BFS_2_kernel_name = "BFS_2";
+                        cl_kernel kernel_1 = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], BFS_2_kernel_file, BFS_2_kernel_name); 
+                        oclHandles.kernel.push_back(kernel_1);
+
 			kernel_id = 1;
 			kernel_idx = 0;			
 			_clSetArgs(kernel_id, kernel_idx++, d_graph_mask);
@@ -128,7 +205,7 @@ void run_bfs_gpu(int no_of_nodes, Node *h_graph_nodes, int edge_list_size, \
 			_clSetArgs(kernel_id, kernel_idx++, d_graph_visited);
 			_clSetArgs(kernel_id, kernel_idx++, d_over);
 			_clSetArgs(kernel_id, kernel_idx++, &no_of_nodes, sizeof(int));
-			
+                        			
 			//work_items = no_of_nodes;
 			_clInvokeKernel(kernel_id, no_of_nodes, work_group_size);			
 			
