@@ -26,6 +26,73 @@
  
 #define THREADS 256
 
+void fatal_CL(cl_int, int);
+
+static void* smalloc(size_t size) {
+	void* ptr;
+
+	ptr = malloc(size);
+
+	if (ptr == NULL) {
+		printf("Error: Cannot allocate memory\n");
+		printf("Test failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return ptr;
+}
+
+static int load_file_to_memory(const char *filename, char **result) {
+	unsigned int size;
+
+	FILE *f = fopen(filename, "rb");
+	if (f == NULL) {
+		*result = NULL;
+		printf("Error: Could not read file %s\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	*result = (char *) smalloc(sizeof(char)*(size+1));
+
+	if (size != fread(*result, sizeof(char), size, f)) {
+		free(*result);
+		printf("Error: read of kernel failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	fclose(f);
+	(*result)[size] = 0;
+
+	return size;
+}
+
+cl_kernel make_kernel(cl_context context, cl_program program, cl_device_id device,  char* krnl_file, char* krnl_name) {
+        char *krnl_bin;
+        //char *krnl_file = "./binary/srad_extract_kernel_default.xclbin";
+	const size_t krnl_size = load_file_to_memory(krnl_file, &krnl_bin);
+
+        int err;
+        program = clCreateProgramWithBinary(context, 1, &device, &krnl_size, (const unsigned char**) &krnl_bin, NULL, &err);
+        if ((!program) || (err!=CL_SUCCESS)) {
+	    printf("Error: Failed to create compute program from binary %d!\n", err);
+	    printf("Test failed\n");
+	    exit(EXIT_FAILURE);
+	}
+        err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+        if (err != CL_SUCCESS) 
+	    fatal_CL(err, __LINE__);
+
+        cl_kernel kernel;
+	kernel = clCreateKernel(program, krnl_name, &err);
+	if (err != CL_SUCCESS) 
+		fatal_CL(err, __LINE__);
+        return kernel;
+}
+
 struct dwt {
     char * srcFilename;
     char * outFilename;
@@ -70,10 +137,10 @@ cl_context CreateContext()
     cl_context_properties contextProperties[] =
     {
         CL_CONTEXT_PLATFORM,
-        (cl_context_properties)platformIds[1],
+        (cl_context_properties)platformIds[2],
         0
     };
-    context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_GPU,
+    context = clCreateContextFromType(contextProperties, CL_DEVICE_TYPE_ACCELERATOR,
                                       NULL, NULL, &errNum);
     if (errNum != CL_SUCCESS)
     {
@@ -339,6 +406,13 @@ void rgbToComponents(cl_mem d_r, cl_mem d_g, cl_mem d_b, unsigned char * h_src, 
 	size_t globalWorkSize[1] = { alignedSize/3};
     size_t localWorkSize[1] = { THREADS };
 
+
+        // create kernel
+        char* components_kernel_file = "./binary/cfd_c_CopySrcToComponents_default.xclbin";
+        char* components_kernel_name = "c_CopySrcToComponents";
+        c_CopySrcToComponents = make_kernel(context, program, cldevice, components_kernel_file, components_kernel_name);
+
+
 	errNum  = clSetKernelArg(c_CopySrcToComponents, 0, sizeof(cl_mem), &d_r);
 	errNum |= clSetKernelArg(c_CopySrcToComponents, 1, sizeof(cl_mem), &d_g);
 	errNum |= clSetKernelArg(c_CopySrcToComponents, 2, sizeof(cl_mem), &d_b);
@@ -371,6 +445,11 @@ void bwToComponent(cl_mem d_c, unsigned char * h_src, int width, int height)
 	size_t globalWorkSize[1] = { alignedSize/9};
     size_t localWorkSize[1] = { THREADS };
 	assert(alignedSize%(THREADS*3) == 0);
+
+        // create kernel
+        char* component_kernel_file = "./binary/cfd_c_CopySrcToComponent_default.xclbin";
+        char* component_kernel_name = "c_CopySrcToComponent";
+        c_CopySrcToComponent = make_kernel(context, program, cldevice, component_kernel_file, component_kernel_name);
 	
 	errNum  = clSetKernelArg(c_CopySrcToComponent, 0, sizeof(cl_mem), &d_c);
 	errNum |= clSetKernelArg(c_CopySrcToComponent, 1, sizeof(cl_mem), &cl_d_src);
@@ -415,6 +494,11 @@ void launchFDWT53Kernel (int WIN_SX, int WIN_SY, cl_mem in, cl_mem out, int sx, 
 	size_t globalWorkSize[2] = { gx*WIN_SX, gy*1};
     size_t localWorkSize[2]  = { WIN_SX , 1};
     // printf("\n globalx=%d, globaly=%d, blocksize=%d\n", gx, gy, WIN_SX);
+
+        // create kernel
+        char* fdwt53_kernel_file = "./binary/cfd_cl_fdwt53Kernel_default.xclbin";
+        char* fdwt53_kernel_name = "cl_fdwt53Kernel";
+        kl_fdwt53Kernel = make_kernel(context, program, cldevice, fdwt53_kernel_file, fdwt53_kernel_name);
 	
 	errNum  = clSetKernelArg(kl_fdwt53Kernel, 0, sizeof(cl_mem), &in);
 	errNum |= clSetKernelArg(kl_fdwt53Kernel, 1, sizeof(cl_mem), &out);
@@ -951,6 +1035,7 @@ int main(int argc, char **argv)
         return 1;
     }
 	
+    /*
 	// Create OpenCL program from com_dwt.cl kernel source
 	program = CreateProgram(context, cldevice, "com_dwt.cl");
     if (program == NULL)
@@ -976,6 +1061,7 @@ int main(int argc, char **argv)
 	{
 		std::cerr<<"Failed to create kernel\n";
 	}
+    */
 	
 
 	

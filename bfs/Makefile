@@ -18,7 +18,7 @@ bfs_gpu.exe: $(GPU_SRC)
 bfs_fpga.exe: $(FPGA_SRC)
 	$(CC) $(CC_FLAGS) -fopenmp $(FPGA_SRC) -o $@ -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL 
 
-opencl.so: ./util/opencl/opencl.c ./util/opencl/opencl.h
+opencl.o: ./util/opencl/opencl.c ./util/opencl/opencl.h
 	gcc $< -o ./util/opencl/opencl.o -O3
 
 clean: $(SRC)

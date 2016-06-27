@@ -18,12 +18,12 @@ C_C = g++
 
 default:	dwt2d
 
-components:
-	$(C_C) -o components.o -I$(OPENCL_INC) -c components.cpp 
+components: 
+	$(C_C) components.cpp -o components.o -I$(OPENCL_INC) -c
 
-dwt2d:
-	$(C_C) -o dwt2d -I$(OPENCL_INC) \
-		main.cpp \
+dwt2d: 
+	$(C_C) -o dwt2d	 main.cpp \
+		-I$(OPENCL_INC) \
 		$(components) \
 		$(OUTPUT) \
 		-L$(OPENCL_LIB)\
