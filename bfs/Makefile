@@ -3,32 +3,20 @@ include ../../common/make.config
 #C compiler
 CC = g++
 
-SRC = bfs.cpp timer.cc
+GPU_SRC = bfs_gpu.cpp timer.cc
+
+FPGA_SRC = bfs_fpga.cpp timer.cc
 
 CC_FLAGS = -g -O3
 
-EXE = bfs.exe
+all: bfs_gpu.exe \
+     bfs_fpga.exe
 
-release:$(SRC)
-	$(CC) $(CC_FLAGS)  -fopenmp $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL 
+bfs_gpu.exe:$(SRC)
+	$(CC) $(CC_FLAGS) -fopenmp $(GPU_SRC) -o $@ -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL 
 
-errmsg:$(SRC)
-	$(CC) $(CC_FLAGS)  -fopenmp $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL -D ERRMSG PTX_MSG
-
-ptx:$(SRC)
-	$(CC) $(CC_FLAGS) -fopenmp $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL -D PTX_MSG
-
-profile:$(SRC)
-	$(CC) $(CC_FLAGS) -fopenmp $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL -D PROFILING
-
-res:$(SRC)
-	$(CC) $(CC_FLAGS) -fopenmp $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL -D RES_MSG
-
-debug: $(SRC)
-	$(CC) $(CC_FLAGS) $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL 
-
-run:
-	./$(EXE)
+bfs_fpga.exe:$(SRC)
+	$(CC) $(CC_FLAGS) -fopenmp $(FPGA_SRC) -o $@ -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL 
 
 clean: $(SRC)
 	rm -f $(EXE) $(EXE).linkinfo result*
