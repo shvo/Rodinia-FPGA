@@ -1,6 +1,6 @@
-XILINX_SDACCEL :=/opt/Xilinx/SDAccel/2015.4
+XILINX_SDACCEL :=/opt/Xilinx/SDAccel/2016.1
 XILINX_OPENCL := $(XILINX_SDACCEL)
-DSA := xilinx:adm-pcie-7v3:1ddr:2.1
+DSA := xilinx:adm-pcie-7v3:1ddr:3.0
 XOCC := $(XILINX_SDACCEL)/bin/xocc
 CPP := g++
 
