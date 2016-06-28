@@ -121,7 +121,7 @@ heartwall_fpga.exe: ./main.o \
 			$(OCL_INC_DIR)
 
 clean:
-	rm	*.o heartwall \
+	rm	*.o *.exe
 		./kernel/*.o \
 		./util/avi/*.o \
 		./util/file/*.o \
