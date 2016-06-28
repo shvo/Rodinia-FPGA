@@ -3,8 +3,17 @@ include ../../common/make.config
 CC = g++
 CC_FLAGS = -g -O2 
 
-kmeans: cluster.o getopt.o read_input.o kmeans_clustering.o rmse.o
-	$(CC) $(KERNEL_DIM) $(CC_FLAGS) -lOpenCL kmeans.cpp cluster.o getopt.o read_input.o kmeans_clustering.o rmse.o -o kmeans -I$(OPENCL_INC) -I$(OPENCL_DIR)/shared/inc/ -L$(OPENCL_LIB)
+GPU_SRC = cluster.o getopt.o read_input.o kmeans_clustering.o rmse.o
+FPGA_SRC = cluster.o getopt.o read_input.o kmeans_clustering.o rmse.o
+
+all : kmeans_gpu.exe \
+      kmeans_fpga.exe
+
+kmeans_gpu.exe: $(GPU_SRC)
+	$(CC) $(KERNEL_DIM) $(CC_FLAGS) -lOpenCL kmeans.cpp cluster.o getopt.o read_input.o kmeans_clustering.o rmse.o -o $@ -I$(OPENCL_INC) -I$(OPENCL_DIR)/shared/inc/ -L$(OPENCL_LIB)
+
+kmeans_fpga.exe: $(GPU_SRC)
+	$(CC) $(KERNEL_DIM) $(CC_FLAGS) -lOpenCL kmeans.cpp cluster.o getopt.o read_input.o kmeans_clustering.o rmse.o -o $@ -I$(OPENCL_INC) -I$(OPENCL_DIR)/shared/inc/ -L$(OPENCL_LIB)
 
 %.o: %.[ch]
 	$(CC) $(CC_FLAGS) $< -c
@@ -22,4 +31,4 @@ rmse.o: rmse.c
 	$(CC) $(CC_FLAGS) rmse.c -c
 
 clean:
-	rm -f *.o *~ kmeans *.linkinfo
+	rm -f *.o *~ kmeans *.linkinfo *.exe
