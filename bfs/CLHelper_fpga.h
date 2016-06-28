@@ -20,6 +20,8 @@ using std::cout;
 //#pragma OPENCL EXTENSION cl_nv_compiler_options:enable
 #define WORK_DIM 2	//work-items dimensions
 
+void _clFinish() throw(string);
+
 struct oclHandleStruct
 {
     cl_context              context;
@@ -510,6 +512,7 @@ cl_mem _clMallocWO(int size) throw(string){
 //transfer data from device to host
 void _clMemcpyD2H(cl_mem d_mem, int size, void * h_mem) throw(string){
 	oclHandles.cl_status = clEnqueueReadBuffer(oclHandles.queue, d_mem, CL_TRUE, 0, size, h_mem, 0,0,0);
+        _clFinish();
 	#ifdef ERRMSG
 		oclHandles.error_str = "excpetion in _clCpyMemD2H -> ";
 		switch(oclHandles.cl_status){
@@ -709,12 +712,13 @@ void _clInvokeKernel(int kernel_id, int work_items, int work_group_size) throw(s
 	if(oclHandles.cl_status != CL_SUCCESS)
 		throw(oclHandles.error_str);	
 	#endif
-	//_clFinish();
-	// oclHandles.cl_status = clWaitForEvents(1, &e[0]);
-	// #ifdef ERRMSG
-        // if (oclHandles.cl_status!= CL_SUCCESS)
-        //     throw(string("excpetion in _clEnqueueNDRange() -> clWaitForEvents"));
-	// #endif
+
+	_clFinish();
+	oclHandles.cl_status = clWaitForEvents(1, &e[0]);
+	 #ifdef ERRMSG
+         if (oclHandles.cl_status!= CL_SUCCESS)
+             throw(string("excpetion in _clEnqueueNDRange() -> clWaitForEvents"));
+	 #endif
 }
 void _clInvokeKernel2D(int kernel_id, int range_x, int range_y, int group_x, int group_y) throw(string){
 	cl_uint work_dim = WORK_DIM;
@@ -778,8 +782,8 @@ void _clInvokeKernel2D(int kernel_id, int range_x, int range_y, int group_x, int
 	if(oclHandles.cl_status != CL_SUCCESS)
 		throw(oclHandles.error_str);	
 	#endif
-	//_clFinish();
-	/*oclHandles.cl_status = clWaitForEvents(1, &e[0]);
+	_clFinish();
+	oclHandles.cl_status = clWaitForEvents(1, &e[0]);
 
 	#ifdef ERRMSG
 
@@ -787,7 +791,7 @@ void _clInvokeKernel2D(int kernel_id, int range_x, int range_y, int group_x, int
 
             throw(string("excpetion in _clEnqueueNDRange() -> clWaitForEvents"));
 
-	#endif*/
+	#endif
 }
 
 //--------------------------------------------------------

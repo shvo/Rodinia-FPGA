@@ -10,7 +10,7 @@
 #include "timer.h"
 #endif
 
-#include "CLHelper.h"
+#include "CLHelper_fpga.h"
 #include "util.h"
 #include "./util/opencl/opencl.h"
 
@@ -173,44 +173,63 @@ void run_bfs_gpu(int no_of_nodes, Node *h_graph_nodes, int edge_list_size, \
 		do{
                         char* BFS_1_kernel_file = "./binary/BFS_1_default.xclbin";
                         char* BFS_1_kernel_name = "BFS_1";
+                        printf("begin to make kernel_0\n");
                         cl_kernel kernel_0 = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], BFS_1_kernel_file, BFS_1_kernel_name); 
-                        oclHandles.kernel.push_back(kernel_0);
+                        printf("kernel_0 is created\n");
+
+                        if (oclHandles.kernel.size() < 2) {
+                            oclHandles.kernel.push_back(kernel_0);
+                        }
+                        else {
+                            oclHandles.kernel.at(0) = kernel_0;
+                        }
 
 			h_over = false;
 			_clMemcpyH2D(d_over, sizeof(char), &h_over);
 			//--kernel 0
 			int kernel_id = 0;
-			int kernel_idx = 0;
-			_clSetArgs(kernel_id, kernel_idx++, d_graph_nodes);
-			_clSetArgs(kernel_id, kernel_idx++, d_graph_edges);
-			_clSetArgs(kernel_id, kernel_idx++, d_graph_mask);
-			_clSetArgs(kernel_id, kernel_idx++, d_updating_graph_mask);
-			_clSetArgs(kernel_id, kernel_idx++, d_graph_visited);
-			_clSetArgs(kernel_id, kernel_idx++, d_cost);
-			_clSetArgs(kernel_id, kernel_idx++, &no_of_nodes, sizeof(int));
+			int arg_idx = 0;
+			_clSetArgs(kernel_id, arg_idx++, d_graph_nodes);
+			_clSetArgs(kernel_id, arg_idx++, d_graph_edges);
+			_clSetArgs(kernel_id, arg_idx++, d_graph_mask);
+			_clSetArgs(kernel_id, arg_idx++, d_updating_graph_mask);
+			_clSetArgs(kernel_id, arg_idx++, d_graph_visited);
+			_clSetArgs(kernel_id, arg_idx++, d_cost);
+			_clSetArgs(kernel_id, arg_idx++, &no_of_nodes, sizeof(int));
 		 
 			//int work_items = no_of_nodes;
 			_clInvokeKernel(kernel_id, no_of_nodes, work_group_size);
+                        printf("kernel_0 is invoked\n");
 			
 			//--kernel 1
                         char* BFS_2_kernel_file = "./binary/BFS_2_default.xclbin";
                         char* BFS_2_kernel_name = "BFS_2";
+                        printf("begin to make kernel_1\n");
                         cl_kernel kernel_1 = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], BFS_2_kernel_file, BFS_2_kernel_name); 
-                        oclHandles.kernel.push_back(kernel_1);
+                        printf("kernel_1 is created\n");
+
+                        if (oclHandles.kernel.size() < 2) {
+                            oclHandles.kernel.push_back(kernel_1);
+                        }
+                        else {
+                            oclHandles.kernel.at(1) = kernel_1;
+                        }
 
 			kernel_id = 1;
-			kernel_idx = 0;			
-			_clSetArgs(kernel_id, kernel_idx++, d_graph_mask);
-			_clSetArgs(kernel_id, kernel_idx++, d_updating_graph_mask);
-			_clSetArgs(kernel_id, kernel_idx++, d_graph_visited);
-			_clSetArgs(kernel_id, kernel_idx++, d_over);
-			_clSetArgs(kernel_id, kernel_idx++, &no_of_nodes, sizeof(int));
+			arg_idx = 0;			
+			_clSetArgs(kernel_id, arg_idx++, d_graph_mask);
+			_clSetArgs(kernel_id, arg_idx++, d_updating_graph_mask);
+			_clSetArgs(kernel_id, arg_idx++, d_graph_visited);
+			_clSetArgs(kernel_id, arg_idx++, d_over);
+			_clSetArgs(kernel_id, arg_idx++, &no_of_nodes, sizeof(int));
                         			
 			//work_items = no_of_nodes;
-			_clInvokeKernel(kernel_id, no_of_nodes, work_group_size);			
+			_clInvokeKernel(kernel_id, no_of_nodes, work_group_size); 
+                        printf("kernel_1 is invoked\n");
 			
 			_clMemcpyD2H(d_over,sizeof(char), &h_over);
-			}while(h_over);
+                        printf("memcpyD2H is finished\n");
+			} while(h_over);
 			
 		_clFinish();
 #ifdef	PROFILING
