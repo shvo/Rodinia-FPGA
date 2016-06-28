@@ -22,7 +22,7 @@
  * 
  */ 
 #define GAMMA 1.4f
-#define iterations 2000
+#define iterations 2
 #ifndef block_length
 	#define block_length 192
 #endif
@@ -383,6 +383,7 @@ int main(int argc, char** argv){
 
 		// Begin iterations
 		for(int i = 0; i < iterations; i++){
+                        printf("iteration = %d\n", i);
 			copy<float>(old_variables, variables, nelr*NVAR);
 			// for the first iteration we compute the time step
 			compute_step_factor(nelr, variables, areas, step_factors);

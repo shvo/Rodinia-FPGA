@@ -1291,8 +1291,8 @@ void _clInvokeKernel(int kernel_id, int work_items, int work_group_size) throw(s
 		throw(oclHandles.error_str);	
 	}
 	#endif
-	//_clFinish();
-	//	oclHandles.cl_status = clWaitForEvents(1, &e[0]);
+	_clFinish();
+	oclHandles.cl_status = clWaitForEvents(1, &e[0]);
 	#ifdef ERRMSG
     if (oclHandles.cl_status!= CL_SUCCESS){
     	oclHandles.error_str = "excpetion in _clEnqueueNDRange() -> clWaitForEvents ->";
