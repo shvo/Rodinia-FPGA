@@ -258,18 +258,25 @@ void Cleanup(cl_context context, cl_command_queue commandQueue,
              cl_program program, cl_kernel kernel)
 {
 
-    if (commandQueue != 0)
+    if (commandQueue != 0) {
         clReleaseCommandQueue(commandQueue);
+        //printf("commandQueue is released\n");
+    }
 
-    if (kernel != 0)
+    if (kernel != 0) {
         clReleaseKernel(kernel);
+        //printf("kernel is released\n");
+    }
 
-    if (program != 0)
+    if (program != 0) {
         clReleaseProgram(program);
+        //printf("program is released\n");
+    }
 
-    if (context != 0)
+    if (context != 0) {
         clReleaseContext(context);
-
+        //printf("context is released\n");
+    }
 }
 
 ///
@@ -418,14 +425,20 @@ void rgbToComponents(cl_mem d_r, cl_mem d_g, cl_mem d_b, unsigned char * h_src, 
 	errNum |= clSetKernelArg(c_CopySrcToComponents, 2, sizeof(cl_mem), &d_b);
 	errNum |= clSetKernelArg(c_CopySrcToComponents, 3, sizeof(cl_mem), &cl_d_src);
 	errNum |= clSetKernelArg(c_CopySrcToComponents, 4, sizeof(int), &pixels);
-	// fatal_CL(errNum, __LINE__);	
+        if (errNum != CL_SUCCESS) 
+	    fatal_CL(errNum, __LINE__);	
 	
 	errNum = clEnqueueNDRangeKernel(commandQueue, c_CopySrcToComponents, 1, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
-	// fatal_CL(errNum, __LINE__);
+        if (errNum != CL_SUCCESS) 
+	    fatal_CL(errNum, __LINE__);
+
+        errNum = clFinish(commandQueue);
+	if (errNum != CL_SUCCESS) 
+	    fatal_CL(errNum, __LINE__);
 	
     // Free Memory 
 	errNum = clReleaseMemObject(cl_d_src);  
-	// fatal_CL(errNum, __LINE__);	
+	fatal_CL(errNum, __LINE__);	
 }
 
 
@@ -510,10 +523,13 @@ void launchFDWT53Kernel (int WIN_SX, int WIN_SY, cl_mem in, cl_mem out, int sx, 
 	// fatal_CL(errNum, __LINE__);
 	
 	errNum = clEnqueueNDRangeKernel(commandQueue, kl_fdwt53Kernel, 2, NULL, globalWorkSize, localWorkSize, 0, NULL, NULL);
-	// fatal_CL(errNum, __LINE__);
+        if (errNum != CL_SUCCESS) 
+	    fatal_CL(errNum, __LINE__);
 	printf("kl_fdwt53Kernel in launchFDW53Kernel has finished\n");
-	
 
+        errNum = clFinish(commandQueue);
+	if (errNum != CL_SUCCESS) 
+	    fatal_CL(errNum, __LINE__);
 }
 
 
@@ -843,10 +859,8 @@ void processDWT(struct dwt *d, int forward, int writeVisual)
 		
 		
         rgbToComponents(cl_c_r, cl_c_g, cl_c_b, d->srcImg, d->pixWidth, d->pixHeight);
-       
         
         //Compute DWT and always store int file
-       
         nStage2dDWT(cl_c_r, cl_c_r_out, cl_backup, d->pixWidth, d->pixHeight, d->dwtLvls, forward);
         nStage2dDWT(cl_c_g, cl_c_g_out, cl_backup, d->pixWidth, d->pixHeight, d->dwtLvls, forward);
         nStage2dDWT(cl_c_b, cl_c_b_out, cl_backup, d->pixWidth, d->pixHeight, d->dwtLvls, forward);
@@ -866,24 +880,28 @@ void processDWT(struct dwt *d, int forward, int writeVisual)
 #ifdef OUTPUT        
         // Store DWT to file
         if(writeVisual){
+          //printf("writeVisual = 1\n");
             writeNStage2DDWT(cl_c_r_out, d->pixWidth, d->pixHeight, d->dwtLvls, d->outFilename, ".r");
             writeNStage2DDWT(cl_c_g_out, d->pixWidth, d->pixHeight, d->dwtLvls, d->outFilename, ".g");
             writeNStage2DDWT(cl_c_b_out, d->pixWidth, d->pixHeight, d->dwtLvls, d->outFilename, ".b");
         
         } else {
+          //printf("writeLinear = 1\n");
             writeLinear(cl_c_r_out, d->pixWidth, d->pixHeight, d->outFilename, ".r");
             writeLinear(cl_c_g_out, d->pixWidth, d->pixHeight, d->outFilename, ".g");
             writeLinear(cl_c_b_out, d->pixWidth, d->pixHeight, d->outFilename, ".b");
         }
 #endif		
-		
-		clReleaseMemObject(cl_c_r);
-		clReleaseMemObject(cl_c_g);
-		clReleaseMemObject(cl_c_b);
-		clReleaseMemObject(cl_c_g_out);
-		clReleaseMemObject(cl_c_b_out);
+	//printf("begin to release memory objects\n");	
+	clReleaseMemObject(cl_c_r);
+	clReleaseMemObject(cl_c_g);
+	clReleaseMemObject(cl_c_b);
+	clReleaseMemObject(cl_c_g_out);
+	clReleaseMemObject(cl_c_b_out);
+	//printf("memory objects are released\n");	
 
 	} else if(d->components == 1) { 
+        //printf("components == 1\n");
         // Load components 
         cl_mem cl_c_r;
 		cl_c_r = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,componentSize, temp, &errNum);
@@ -906,8 +924,9 @@ void processDWT(struct dwt *d, int forward, int writeVisual)
 
     } 
 
-	free(temp);
-	clReleaseMemObject(cl_c_r_out);
+    free(temp);
+    clReleaseMemObject(cl_c_r_out);
+    //printf("processDWT is finished\n");
 }
 
 
@@ -1120,11 +1139,12 @@ int main(int argc, char **argv)
         else // 5/3
             processDWT<int>(d, forward, writeVisual);
     }
-	
-
-	Cleanup(context, commandQueue, program, kernel);
-	clReleaseKernel(c_CopySrcToComponents);
-	clReleaseKernel(c_CopySrcToComponent);
+    	
+    printf("begin to cleanup\n");
+    Cleanup(context, commandQueue, program, kernel);
+    printf("cleanup is finshed\n");
+    //clReleaseKernel(c_CopySrcToComponents);   // commented by Shuo Wang
+    //clReleaseKernel(c_CopySrcToComponent);    // commented by Shuo Wang
 	
     return 0;
 	

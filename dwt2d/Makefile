@@ -16,13 +16,22 @@ C_C = g++
 #OCL_LIB = -lOpenCL
 #OCL_INC = -I/usr/local/cuda-5.5/include 
 
-default:	dwt2d
+all: dwt2d_gpu.exe \
+  	 dwt2d_fpga.exe
 
 components: 
 	$(C_C) components.cpp -o components.o -I$(OPENCL_INC) -c
 
-dwt2d: 
-	$(C_C) -o dwt2d	 main.cpp \
+dwt2d_fpga.exe: 
+	$(C_C) -o $@ main_fpga.cpp \
+		-I$(OPENCL_INC) \
+		$(components) \
+		$(OUTPUT) \
+		-L$(OPENCL_LIB)\
+		-lOpenCL
+
+dwt2d_gpu.exe: 
+	$(C_C) -o $@ main_gpu.cpp \
 		-I$(OPENCL_INC) \
 		$(components) \
 		$(OUTPUT) \
@@ -30,6 +39,6 @@ dwt2d:
 		-lOpenCL
 
 clean:	
-	rm -rf *.o dwt2d
-	rm *.bmp.dwt.*
+	rm -rf *.o
+	rm *.bmp.dwt.* *.exe
 
