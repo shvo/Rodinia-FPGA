@@ -121,6 +121,15 @@ void initialize_variables(int nelr, cl_mem variables, cl_mem ff_variable) throw(
 	int work_group_size = BLOCK_SIZE_1;
 	int kernel_id = 1;
 	int arg_idx = 0;	
+
+        // create kernel
+        char* initialize_kernel_file = "./binary/cfd_initialize_variables_default.xclbin";
+        char* initialize_kernel_name = "initialize_variables";
+        printf("begin to make initialize_variables kernel\n");
+        cl_kernel kernel = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], initialize_kernel_file, initialize_kernel_name);
+        printf("initialize_variables kernel is created\n");
+        oclHandles.kernel.at(kernel_id) = kernel;
+
 	_clSetArgs(kernel_id, arg_idx++, variables);
 	_clSetArgs(kernel_id, arg_idx++, ff_variable);
 	_clSetArgs(kernel_id, arg_idx++, &nelr, sizeof(int));
@@ -133,6 +142,15 @@ void compute_step_factor(int nelr, cl_mem variables, cl_mem areas, cl_mem step_f
 	int work_group_size = BLOCK_SIZE_2;
 	int kernel_id = 2;
 	int arg_idx = 0;
+
+        // create kernel
+        char* step_factor_kernel_file = "./binary/cfd_compute_step_factor_default.xclbin";
+        char* step_factor_kernel_name = "compute_step_factor";
+        printf("begin to make compute_step_factor kernel\n");
+        cl_kernel kernel = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], step_factor_kernel_file, step_factor_kernel_name);
+        printf("compute_step_factor kernel is created\n");
+        oclHandles.kernel.at(kernel_id) = kernel;
+
 	_clSetArgs(kernel_id, arg_idx++, variables);
 	_clSetArgs(kernel_id, arg_idx++, areas);
 	_clSetArgs(kernel_id, arg_idx++, step_factors);
@@ -150,6 +168,15 @@ void compute_flux(int nelr, cl_mem elements_surrounding_elements, cl_mem normals
 	int work_group_size = BLOCK_SIZE_3;
 	int kernel_id = 3;
 	int arg_idx = 0;
+
+        // create kernel
+        char* flux_kernel_file = "./binary/cfd_compute_flux_default.xclbin";
+        char* flux_kernel_name = "compute_flux";
+        printf("begin to make compute_flux kernel\n");
+        cl_kernel kernel = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], flux_kernel_file, flux_kernel_name);
+        printf("compute_flux kernel is created\n");
+        oclHandles.kernel.at(kernel_id) = kernel;
+
 	_clSetArgs(kernel_id, arg_idx++, elements_surrounding_elements);
 	_clSetArgs(kernel_id, arg_idx++, normals);
 	_clSetArgs(kernel_id, arg_idx++, variables);
@@ -169,6 +196,15 @@ void time_step(int j, int nelr, cl_mem old_variables, cl_mem variables, cl_mem s
 	int work_group_size = BLOCK_SIZE_4;
 	int kernel_id = 4;
 	int arg_idx = 0;
+
+        // create kernel
+        char* time_step_kernel_file = "./binary/cfd_time_step_default.xclbin";
+        char* time_step_kernel_name = "time_step";
+        printf("begin to make time_step kernel\n");
+        cl_kernel kernel = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], time_step_kernel_file, time_step_kernel_name);
+        printf("time_step kernel is created\n");
+        oclHandles.kernel.at(kernel_id) = kernel;
+
 	_clSetArgs(kernel_id, arg_idx++, &j, sizeof(int));
 	_clSetArgs(kernel_id, arg_idx++, &nelr, sizeof(int));
 	_clSetArgs(kernel_id, arg_idx++, old_variables);

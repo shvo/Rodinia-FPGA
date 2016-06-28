@@ -12,6 +12,7 @@
 #include <fstream>
 #include <string>
 #include "util.h"
+#include "./util/opencl/opencl.h"
 
 using std::string;
 using std::ifstream;
@@ -105,6 +106,71 @@ struct oclHandleStruct{
 };
 
 struct oclHandleStruct oclHandles;
+
+static void* smalloc(size_t size) {
+	void* ptr;
+
+	ptr = malloc(size);
+
+	if (ptr == NULL) {
+		printf("Error: Cannot allocate memory\n");
+		printf("Test failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return ptr;
+}
+
+static int load_file_to_memory(const char *filename, char **result) {
+	unsigned int size;
+
+	FILE *f = fopen(filename, "rb");
+	if (f == NULL) {
+		*result = NULL;
+		printf("Error: Could not read file %s\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	*result = (char *) smalloc(sizeof(char)*(size+1));
+
+	if (size != fread(*result, sizeof(char), size, f)) {
+		free(*result);
+		printf("Error: read of kernel failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	fclose(f);
+	(*result)[size] = 0;
+
+	return size;
+}
+
+cl_kernel make_kernel(cl_context context, cl_program program, cl_device_id device,  char* krnl_file, char* krnl_name) {
+        char *krnl_bin;
+        //char *krnl_file = "./binary/srad_extract_kernel_default.xclbin";
+	const size_t krnl_size = load_file_to_memory(krnl_file, &krnl_bin);
+
+        int err;
+        program = clCreateProgramWithBinary(context, 1, &device, &krnl_size, (const unsigned char**) &krnl_bin, NULL, &err);
+        if ((!program) || (err!=CL_SUCCESS)) {
+	    printf("Error: Failed to create compute program from binary %d!\n", err);
+	    printf("Test failed\n");
+	    exit(EXIT_FAILURE);
+	}
+        err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+        if (err != CL_SUCCESS) 
+	    fatal_CL(err, __LINE__);
+
+        cl_kernel kernel;
+	kernel = clCreateKernel(program, krnl_name, &err);
+	if (err != CL_SUCCESS) 
+		fatal_CL(err, __LINE__);
+        return kernel;
+}
 
 char kernel_file[100]  = "Kernels.cl";
 int total_kernels = 5;
@@ -339,8 +405,8 @@ void _clInit(string device_type, int device_id)throw(string){
     if (resultCL != CL_SUCCESS)
         throw (string("InitCL()::Error: Getting platform ids (clGetPlatformIDs)"));
 
-    // Select the target platform. Default: first platform 
-    targetPlatform = allPlatforms[0];
+    // Select the 3rd platform(FPGA)
+    targetPlatform = allPlatforms[2];
     for (int i = 0; i < numPlatforms; i++)
     {
         char pbuff[128];
@@ -477,6 +543,7 @@ void _clInit(string device_type, int device_id)throw(string){
 #endif
     //-----------------------------------------------
     //--cambine-5: Load CL file, build CL program object, create CL kernel object
+    /*
     std::string  source_str = FileToString(kernel_file);
     const char * source    = source_str.c_str();
     size_t sourceSize[]    = { source_str.length() };
@@ -525,6 +592,7 @@ void _clInit(string device_type, int device_id)throw(string){
 
         throw(string("InitCL()::Error: Building Program (clBuildProgram)"));
     } 
+    */
 #ifdef PROFILE_
 	double t3 = gettime();
 	KC += t3 - t2;
@@ -560,7 +628,7 @@ void _clInit(string device_type, int device_id)throw(string){
     for(int i=0;i<deviceListSize;i++)
 	free(binaries[i]);
 #endif
-
+    /*
     for (int nKernel = 0; nKernel < total_kernels; nKernel++)
     {
         // get a kernel object handle for a kernel with the given name 
@@ -575,6 +643,11 @@ void _clInit(string device_type, int device_id)throw(string){
         }
 
         oclHandles.kernel.push_back(kernel);
+    }
+    */
+    for (int nKernel = 0; nKernel < total_kernels; nKernel++) {
+        cl_kernel kernel = NULL;
+        oclHandles.kernel.push_back(kernel);       
     }
   //get resource alocation information
 #ifdef RES_MSG
@@ -1268,6 +1341,15 @@ void _clInvokeKernel(int kernel_id, int work_items, int work_group_size) throw(s
 void _clMemset(cl_mem mem_d, short val, int number_bytes)throw(string){
 	int kernel_id = 0;
 	int arg_idx = 0;
+
+        // create kernel
+        char* memset_kernel_file = "./binary/cfd_memset_kernel_default.xclbin";
+        char* memset_kernel_name = "memset_kernel";
+        printf("begin to make memset kernel\n");
+        cl_kernel kernel = make_kernel(oclHandles.context, oclHandles.program, oclHandles.devices[0], memset_kernel_file, memset_kernel_name);
+        printf("memset kernel is created\n");
+        oclHandles.kernel.at(kernel_id) = kernel;
+
 	_clSetArgs(kernel_id, arg_idx++, mem_d);
 	_clSetArgs(kernel_id, arg_idx++, &val, sizeof(short));
 	_clSetArgs(kernel_id, arg_idx++, &number_bytes, sizeof(int));	

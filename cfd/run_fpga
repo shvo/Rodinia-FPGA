@@ -9,6 +9,6 @@
 
 for ((  i=1;  i<=1;  i++))
 do
-  ./cfd_fpga.exe ../../data/cfd/fvcorr.domn.097K -t gpu -d 0
+  ./cfd_fpga.exe ../../data/cfd/fvcorr.domn.097K -t acc -d 0
 #  ./cfd.exe ../../data/cfd/fvcorr.domn.097K 1
 done
