@@ -1,0 +1,2 @@
+# input argument range is 0-104
+./heartwall_fpga.exe 20

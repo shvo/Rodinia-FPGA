@@ -10,23 +10,44 @@ OCL_LIB_DIR = -L$(OPENCL_LIB)
 C_C = gcc
 OCL_LIB = -lOpenCL
 
-./a.out:	./main.o \
-			./kernel/kernel_gpu_opencl_wrapper.o \
-			./util/avi/avilib.o \
-			./util/avi/avimod.o \
-			./util/file/file.o \
-			./util/timer/timer.o \
-			./util/opencl/opencl.o
+all: heartwall_gpu.exe \
+     heartwall_fpga.exe \
+
+heartwall_gpu.exe: ./main.o \
+		   ./kernel/kernel_gpu_opencl_wrapper.o \
+		   ./util/avi/avilib.o \
+	           ./util/avi/avimod.o \
+		   ./util/file/file.o \
+		   ./util/timer/timer.o \
+		   ./util/opencl/opencl.o
 	$(C_C)	./main.o \
-			./kernel/kernel_gpu_opencl_wrapper.o \
-			./util/avi/avilib.o \
-			./util/avi/avimod.o \
-			./util/file/file.o \
-			./util/timer/timer.o \
-			./util/opencl/opencl.o \
-			-lm \
-			$(OCL_LIB_DIR) \
-			$(OCL_LIB) -o heartwall
+		./kernel/kernel_gpu_opencl_wrapper.o \
+		./util/avi/avilib.o \
+		./util/avi/avimod.o \
+		./util/file/file.o \
+		./util/timer/timer.o \
+		./util/opencl/opencl.o \
+		-lm \
+		$(OCL_LIB_DIR) \
+		$(OCL_LIB) -o $@
+
+heartwall_fpga.exe: ./main.o \
+		   ./kernel/kernel_fpga_opencl_wrapper.o \
+		   ./util/avi/avilib.o \
+	           ./util/avi/avimod.o \
+		   ./util/file/file.o \
+		   ./util/timer/timer.o \
+		   ./util/opencl/opencl.o
+	$(C_C)	./main.o \
+		./kernel/kernel_fpga_opencl_wrapper.o \
+		./util/avi/avilib.o \
+		./util/avi/avimod.o \
+		./util/file/file.o \
+		./util/timer/timer.o \
+		./util/opencl/opencl.o \
+		-lm \
+		$(OCL_LIB_DIR) \
+		$(OCL_LIB) -o $@
 
 # ======================================================================================================================================================150
 #	MAIN FUNCTION
@@ -43,13 +64,21 @@ OCL_LIB = -lOpenCL
 #	KERNELS
 # ======================================================================================================================================================150
 
-./kernel/kernel_gpu_opencl_wrapper.o:	./kernel/kernel_gpu_opencl_wrapper.h \
-										./kernel/kernel_gpu_opencl_wrapper.c
-	$(C_C) $(KERNEL_DIM)	./kernel/kernel_gpu_opencl_wrapper.c \
-			-c \
-			-o ./kernel/kernel_gpu_opencl_wrapper.o \
-			-O3 \
-			$(OCL_INC_DIR)
+./kernel/kernel_gpu_opencl_wrapper.o: ./kernel/kernel_gpu_opencl_wrapper.h \
+				      ./kernel/kernel_gpu_opencl_wrapper.c
+	$(C_C) $(KERNEL_DIM) ./kernel/kernel_gpu_opencl_wrapper.c \
+			     -c \
+			     -o ./kernel/kernel_gpu_opencl_wrapper.o \
+			     -O3 \
+			     $(OCL_INC_DIR)
+
+./kernel/kernel_fpga_opencl_wrapper.o: ./kernel/kernel_fpga_opencl_wrapper.h \
+				      ./kernel/kernel_fpga_opencl_wrapper.c
+	$(C_C) $(KERNEL_DIM) ./kernel/kernel_fpga_opencl_wrapper.c \
+			     -c \
+			     -o ./kernel/kernel_fpga_opencl_wrapper.o \
+			     -O3 \
+			     $(OCL_INC_DIR)
 
 # ======================================================================================================================================================150
 #	UTILITIES
