@@ -3,14 +3,17 @@ include ../../common/make.config
 #C compiler
 CC = g++
 
-SRC = clutils.cpp gaussianElim.cpp utils.cpp
+GPU_SRC = clutils.cpp gaussianElim.cpp utils.cpp
+
+FPGA_SRC = clutils.cpp gaussianElim.cpp utils.cpp
 
 CC_FLAGS = -g -O3
 
-EXE = gaussian
+gaussian_gpu.exe:
+	$(CC) $(KERNEL_DIM) $(CC_FLAGS) -lOpenCL  -fopenmp $(GPU_SRC) -o $@ -I$(OPENCL_INC) -L$(OPENCL_LIB)
 
-release:
-	$(CC) $(KERNEL_DIM) $(CC_FLAGS) -lOpenCL  -fopenmp $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB)
+gaussian_fpga.exe:
+	$(CC) $(KERNEL_DIM) $(CC_FLAGS) -lOpenCL  -fopenmp $(FPGA_SRC) -o $@ -I$(OPENCL_INC) -L$(OPENCL_LIB)
 	
 clean: 
-	rm -f $(EXE) 
+	rm -f *.exe
