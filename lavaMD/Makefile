@@ -19,8 +19,11 @@ OCL_LIB =	-L$(OPENCL_LIB) \
 			-lOpenCL
 OCL_INC = -I$(OPENCL_INC)
 
+all: lavaMD_gpu.exe \
+     lavaMD_fpga.exe
+
 # link objects together
-a.out:		main.o \
+lavaMD_gpu.exe:		main.o \
 			./kernel/kernel_gpu_opencl_wrapper.o \
 			./util/num/num.o \
 			./util/timer/timer.o \
@@ -32,7 +35,22 @@ a.out:		main.o \
 			./util/opencl/opencl.o \
 			-lm \
 			$(OCL_LIB) \
-			-o lavaMD
+			-o $@
+
+# link objects together
+lavaMD_fpga.exe:	main.o \
+			./kernel/kernel_gpu_opencl_wrapper.o \
+			./util/num/num.o \
+			./util/timer/timer.o \
+			./util/opencl/opencl.o
+	$(C_C)	main.o \
+			./kernel/kernel_gpu_opencl_wrapper.o \
+			./util/num/num.o \
+			./util/timer/timer.o \
+			./util/opencl/opencl.o \
+			-lm \
+			$(OCL_LIB) \
+			-o $@
 
 # compile function files into objects
 main.o:		main.h \
@@ -82,7 +100,7 @@ main.o:		main.h \
 
 # delete all object and executable files
 clean:
-	rm	*.o lavaMD \
+	rm	*.o *.exe \
 		./kernel/*.o \
 		./util/num/*.o \
 		./util/timer/*.o \
