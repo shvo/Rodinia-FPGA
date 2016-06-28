@@ -2,26 +2,20 @@ include ../../common/make.config
 #C compiler
 CC = g++
 
-#OPENCL_DIR = /home/sc5nf/ati-stream-sdk-v2.2-lnx64/
-#INC = $(OPENCL_DIR)/include/ 
-#LIB = $(OPENCL_DIR)/lib/x86_64/
-
 FLAGS = -O3
-SRC = euler3d.cpp
 
-EXE = euler3d
+SRC_GPU = euler3d_gpu.cpp
 
-release:$(SRC)
-	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL $(FLAGS) 
+SRC_FPGA = euler3d_fpga.cpp
 
-errmsg:$(SRC)
-	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL -D ERRMSG $(FLAGS)
+all: cfd_gpu.exe \
+     cfd_fpga.exe
 
-ptx:$(SRC)
-	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB)  -lOpenCL -D PTX_MSG $(FLAGS)
+cfd_gpu.exe: $(SRC_GPU)
+	$(CC) $(KERNEL_DIM) $(SRC_GPU) -o $@ -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL $(FLAGS) 
 
-res:$(SRC)
-	$(CC) $(KERNEL_DIM) $(SRC) -o $(EXE) -I$(OPENCL_INC) -L$(OPENCL_LIB)  -lOpenCL -D RES_MSG $(FLAGS)
+cfd_fpga.exe: $(SRC_FPGA)
+	$(CC) $(KERNEL_DIM) $(SRC_FPGA) -o $@ -I$(OPENCL_INC) -L$(OPENCL_LIB) -lOpenCL $(FLAGS) 
 
 clean: $(SRC)
-	rm -f $(EXE) $(EXE).linkinfo result*
+	rm -f *.exe result*

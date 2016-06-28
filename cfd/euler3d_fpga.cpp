@@ -15,7 +15,7 @@
 #include <iostream>
 #include <fstream>
 #include <math.h>
-#include "CLHelper.h" 
+#include "CLHelper_fpga.h" 
  
 /*
  * Options 
