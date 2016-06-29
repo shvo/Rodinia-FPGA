@@ -1,7 +1,7 @@
 #ifndef __GAUSSIAN_ELIMINATION__
 #define __GAUSSIAN_ELIMINATION__
 
-#include "gaussianElim.h"
+#include "gaussianElim_fpga.h"
 #include <math.h>
 
 #ifdef RD_WG_SIZE_0_0
@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
       {
 	fp = fopen(filename, "r");
 	fscanf(fp, "%d", &size);
+        //printf("\nsize = %d\n", size);
     
 	a = (float *) malloc(size * size * sizeof(float));
 	InitMat(fp,size, a, size, size);
