@@ -1,4 +1,4 @@
-#include "hotspot.h"
+#include "hotspot_gpu.h"
 
 
 void writeoutput(float *vect, int grid_rows, int grid_cols, char *file) {
