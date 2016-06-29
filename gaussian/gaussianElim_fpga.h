@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <algorithm>
 
-#include "clutils.h"
+#include "clutils_fpga.h"
 
 // All OpenCL headers
 #if defined (__APPLE__) || defined(MACOSX)
@@ -27,7 +27,7 @@ int parseCommandline(int argc, char *argv[], char* filename,
                      int *q, int *t, int *p, int *d, int *size);
                      
 void InitPerRun(int size,float *m);
-void ForwardSub(cl_context context, float *a, float *b, float *m, int size,int timing);
+void ForwardSub(cl_context context, cl_device_id device, float *a, float *b, float *m, int size,int timing);
 void BackSub(float *a, float *b, float *finalVec, int size);
 void Fan1(float *m, float *a, int Size, int t);
 void Fan2(float *m, float *a, float *b,int Size, int j1, int t);

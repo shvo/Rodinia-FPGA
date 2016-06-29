@@ -56,7 +56,7 @@
 
 #include <CL/cl.h>
 
-#include "clutils.h"
+#include "clutils_gpu.h"
 #include "utils.h"
 
 

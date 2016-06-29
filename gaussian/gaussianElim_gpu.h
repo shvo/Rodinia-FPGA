@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <algorithm>
 
-#include "clutils.h"
+#include "clutils_gpu.h"
 
 // All OpenCL headers
 #if defined (__APPLE__) || defined(MACOSX)

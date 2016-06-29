@@ -3,6 +3,7 @@
 
 #include "gaussianElim_fpga.h"
 #include <math.h>
+#include "./util/opencl/opencl.h"
 
 #ifdef RD_WG_SIZE_0_0
         #define BLOCK_SIZE_0 RD_WG_SIZE_0_0
@@ -35,8 +36,75 @@
         #define BLOCK_SIZE_1_Y 0
 #endif
 
+static void* smalloc(size_t size) {
+	void* ptr;
+
+	ptr = malloc(size);
+
+	if (ptr == NULL) {
+		printf("Error: Cannot allocate memory\n");
+		printf("Test failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return ptr;
+}
+
+static int load_file_to_memory(const char *filename, char **result) {
+	unsigned int size;
+
+	FILE *f = fopen(filename, "rb");
+	if (f == NULL) {
+		*result = NULL;
+		printf("Error: Could not read file %s\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	*result = (char *) smalloc(sizeof(char)*(size+1));
+
+	if (size != fread(*result, sizeof(char), size, f)) {
+		free(*result);
+		printf("Error: read of kernel failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	fclose(f);
+	(*result)[size] = 0;
+
+	return size;
+}
+
+cl_kernel make_kernel(cl_context context, cl_program program, cl_device_id device,  char* krnl_file, char* krnl_name) {
+        char *krnl_bin;
+        //char *krnl_file = "./binary/srad_extract_kernel_default.xclbin";
+	const size_t krnl_size = load_file_to_memory(krnl_file, &krnl_bin);
+
+        int err;
+        program = clCreateProgramWithBinary(context, 1, &device, &krnl_size, (const unsigned char**) &krnl_bin, NULL, &err);
+        if ((!program) || (err!=CL_SUCCESS)) {
+	    printf("Error: Failed to create compute program from binary %d!\n", err);
+	    printf("Test failed\n");
+	    exit(EXIT_FAILURE);
+	}
+        err = clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
+        if (err != CL_SUCCESS) 
+	    fatal_CL(err, __LINE__);
+
+        cl_kernel kernel;
+	kernel = clCreateKernel(program, krnl_name, &err);
+	if (err != CL_SUCCESS) 
+		fatal_CL(err, __LINE__);
+        return kernel;
+}
+
 
 cl_context context=NULL;
+cl_device_id device=NULL;
+//struct oclHandleStruct oclHandles;
 
 // create both matrix and right hand side, Ke Wang 2013/08/12 11:51:06
 void
@@ -77,16 +145,18 @@ int main(int argc, char *argv[]) {
     
     // args
     char filename[200];
-    int quiet=1,timing=0,platform=-1,device=-1;
+    int quiet=1,timing=0,platform=-1,dev=-1;
     
     // parse command line
     if (parseCommandline(argc, argv, filename,
-			 &quiet, &timing, &platform, &device, &size)) {
+			 &quiet, &timing, &platform, &dev, &size)) {
     printUsage();
     return 0;
     }
 
-    context = cl_init_context(platform,device,quiet);
+    struct oclHandleStruct Handles = cl_init_context(platform,dev,quiet);
+    context = Handles.context;
+    device = Handles.device;
     
     if(size < 1)
       {
@@ -138,7 +208,7 @@ int main(int argc, char *argv[]) {
         // PrintAry(b, size);
     
     // run kernels
-	ForwardSub(context,a,b,m,size,timing);
+	ForwardSub(context,device,a,b,m,size,timing);
         // printf("The result of array b is after run: \n");
         // PrintAry(b, size);
     
@@ -172,7 +242,7 @@ int main(int argc, char *argv[]) {
  ** elimination.
  **------------------------------------------------------
  */
-void ForwardSub(cl_context context, float *a, float *b, float *m, int size,int timing){    
+void ForwardSub(cl_context context, cl_device_id device, float *a, float *b, float *m, int size,int timing){    
     // 1. set up kernels
     cl_kernel fan1_kernel,fan2_kernel;
     cl_int status=0;
@@ -181,6 +251,7 @@ void ForwardSub(cl_context context, float *a, float *b, float *m, int size,int t
     float writeTime=0,readTime=0,kernelTime=0;
     float writeMB=0,readMB=0;
     
+    /*
     gaussianElim_program = cl_compileProgram(
         (char *)"gaussianElim_kernels.cl",NULL);
    
@@ -193,6 +264,7 @@ void ForwardSub(cl_context context, float *a, float *b, float *m, int size,int t
         gaussianElim_program, "Fan2", &status);
     status = cl_errChk(status, (char *)"Error Creating Fan2 kernel",true);
     if(status)exit(1);
+    */
     
     // 2. set up memory on device and send ipts data to device
 
@@ -277,6 +349,14 @@ izeFan2Buf[1])*localWorksizeFan2Buf[1];
 	int t;
 	// 4. Setup and Run kernels
 	for (t=0; t<(size-1); t++) {
+
+        // create kernel
+        char* fan1_kernel_file = "./binary/gaussian_Fan1_default.xclbin";
+        char* fan1_kernel_name = "Fan1";
+        printf("begin to make kernel Fan1\n");
+        fan1_kernel = make_kernel(context, gaussianElim_program, device, fan1_kernel_file, fan1_kernel_name); 
+        printf("kernel Fan1 is created\n");
+
         // kernel args
         cl_int argchk;
         argchk  = clSetKernelArg(fan1_kernel, 0, sizeof(cl_mem), (void *)&m_dev);
@@ -302,9 +382,16 @@ izeFan2Buf[1])*localWorksizeFan2Buf[1];
         clReleaseEvent(kernelEvent);
 		//Fan1<<<dimGrid,dimBlock>>>(m_cuda,a_cuda,Size,t);
 		//cudaThreadSynchronize();
+        
+        // create kernel
+        char* fan2_kernel_file = "./binary/gaussian_Fan2_default.xclbin";
+        char* fan2_kernel_name = "Fan2";
+        printf("begin to make kernel Fan2\n");
+        fan2_kernel = make_kernel(context, gaussianElim_program, device, fan2_kernel_file, fan2_kernel_name); 
+        printf("kernel Fan2 is created\n");
 		
-		// kernel args
-		argchk  = clSetKernelArg(fan2_kernel, 0, sizeof(cl_mem), (void *)&m_dev);
+	// kernel args
+	argchk  = clSetKernelArg(fan2_kernel, 0, sizeof(cl_mem), (void *)&m_dev);
         argchk |= clSetKernelArg(fan2_kernel, 1, sizeof(cl_mem), (void *)&a_dev);
         argchk |= clSetKernelArg(fan2_kernel, 2, sizeof(cl_mem), (void *)&b_dev);
         argchk |= clSetKernelArg(fan2_kernel, 3, sizeof(int), (void *)&size);
