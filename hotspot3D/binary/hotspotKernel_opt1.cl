@@ -71,22 +71,8 @@ __kernel void hotspotOpt1(__global float *p,
   // write the data back to local memory
   index = c;
   for(int m = 0; m < 8; m++) {
-      p[index] = p_local[m];
-      index += xy;
-  }
-
-  index = c;
-  for(int m = 0; m < 8; m++) {
       tOut[index] = tOut_local[m];
       index += xy;
-  }
-
-  for(int n = 0; n < 5; n++) {
-      index = pst_local[n];
-      for(int m = 0; m < 8; m++) {
-          tIn[index] = tIn_local[n][m];
-          index += xy;
-      }
   }
   return;
 }
