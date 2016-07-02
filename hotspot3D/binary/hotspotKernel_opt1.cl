@@ -46,27 +46,15 @@ __kernel void hotspotOpt1(__global float *p,
       }
   }
 
-  // calculate layer 0
   float temp1, temp2, temp3;
-  temp1 = temp2 = tIn_local[0][0]; // center & layer 0
-  temp3 = tIn_local[0][1];  // center & layer 1
-  tOut_local[0] = cc * temp2 + cw * tIn_local[1][0] + ce * tIn_local[2][0] + cs * tIn_local[4][0]
-    + cn * tIn_local[3][0] + cb * temp1 + ct * temp3 + sdc * p_local[0] + ct * amb_temp;
-
-  // calculate layer 0-6
-  for (int k = 1; k < nz-1; ++k) {
-      temp1 = temp2;
-      temp2 = temp3;
-      temp3 = tIn_local[0][k+1];
+  // calculate layer 0-7
+  for (int k = 0; k < nz; ++k) {
+      temp1 = (k == 0) ? tIn_local[0][k] : tIn_local[0][k-1];
+      temp2 = tIn_local[0][k];
+      temp3 = (k == (nz-1)) ? tIn_local[0][k] : tIn_local[0][k+1];
       tOut_local[k] = cc * temp2 + cw * tIn_local[1][k] + ce * tIn_local[2][k] + cs * tIn_local[4][k]
         + cn * tIn_local[3][k] + cb * temp1 + ct * temp3 + sdc * p_local[k] + ct * amb_temp;
   }
-
-  // calculate layer 7
-  temp1 = temp2;
-  temp2 = temp3;
-  tOut_local[7] = cc * temp2 + cw * tIn_local[1][7] + ce * tIn_local[2][7] + cs * tIn_local[4][7]
-    + cn * tIn_local[3][7] + cb * temp1 + ct * temp3 + sdc * p_local[7] + ct * amb_temp;
 
   // write the data back to local memory
   index = c;
