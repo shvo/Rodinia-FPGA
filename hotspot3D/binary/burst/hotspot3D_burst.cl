@@ -189,6 +189,9 @@ void hotspot3D_opt1(__global float *p,
             }
   
         }
+        for (int layer = 0; layer < 8; ++layer) {
+            async_work_group_copy(&tOut[line*512 + layer*512*512], &tOut_linebuf0[layer*512], 512, 0);
+        }
     }
 
     return;
