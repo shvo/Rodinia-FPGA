@@ -26,26 +26,44 @@ void hotspot3D_opt1(__global float *p,
             }
         }
         else if (line < 511) {
-            if (line % 3 == 0)
-                for (int layer = 0; layer < 8; ++layer)
+            if (line % 3 == 0) {
+                for (int layer = 0; layer < 8; ++layer) {
+                    async_work_group_copy(&p_linebuf0[layer*512], &p[line*512 + layer*512*512], 512, 0);
                     async_work_group_copy(&tIn_linebuf0[layer*512], &tIn[(line+1)*512 + layer*512*512], 512, 0);
-            else if (line %3 == 1)
-                for (int layer = 0; layer < 8; ++layer)
+                }
+            }
+            else if (line %3 == 1) {
+                for (int layer = 0; layer < 8; ++layer) {
+                    async_work_group_copy(&p_linebuf0[layer*512], &p[line*512 + layer*512*512], 512, 0);
                     async_work_group_copy(&tIn_linebuf1[layer*512], &tIn[(line+1)*512 + layer*512*512], 512, 0);
-            else if (line %3 == 2)
-                for (int layer = 0; layer < 8; ++layer)
+                }
+            }
+            else {
+                for (int layer = 0; layer < 8; ++layer) {
+                    async_work_group_copy(&p_linebuf0[layer*512], &p[line*512 + layer*512*512], 512, 0);
                     async_work_group_copy(&tIn_linebuf2[layer*512], &tIn[(line+1)*512 + layer*512*512], 512, 0);
+                }
+            }
         }
         else {
-            if (line % 3 == 0)
-                for (int layer = 0; layer < 8; ++layer)
+            if (line % 3 == 0) {
+                for (int layer = 0; layer < 8; ++layer) {
+                    async_work_group_copy(&p_linebuf0[layer*512], &p[line*512 + layer*512*512], 512, 0);
                     async_work_group_copy(&tIn_linebuf0[layer*512], &tIn[line*512 + layer*512*512], 512, 0);
-            else if (line %3 == 1)
-                for (int layer = 0; layer < 8; ++layer)
+                }
+            }
+            else if (line %3 == 1) {
+                for (int layer = 0; layer < 8; ++layer) {
+                    async_work_group_copy(&p_linebuf0[layer*512], &p[line*512 + layer*512*512], 512, 0);
                     async_work_group_copy(&tIn_linebuf1[layer*512], &tIn[line*512 + layer*512*512], 512, 0);
-            else if (line %3 == 2)
-                for (int layer = 0; layer < 8; ++layer)
+                }
+            }
+            else {
+                for (int layer = 0; layer < 8; ++layer) {
+                    async_work_group_copy(&p_linebuf0[layer*512], &p[line*512 + layer*512*512], 512, 0);
                     async_work_group_copy(&tIn_linebuf2[layer*512], &tIn[line*512 + layer*512*512], 512, 0);
+                }
+            }
         }
         barrier(CLK_LOCAL_MEM_FENCE);
 
