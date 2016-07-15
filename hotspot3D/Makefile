@@ -9,7 +9,6 @@ CCFLAGS=-O3 -lm
 LIBS = -lOpenCL 
 
 GPU_SRC = 3D_gpu.c CL_helper.c ./util/opencl/opencl.o
-GPU_SIMPLE_SRC = 3D_gpu_simple.c CL_helper.c ./util/opencl/opencl.o
 GPU_SRC_OPT1 = 3D_gpu_opt1.c CL_helper.c ./util/opencl/opencl.o
 GPU_BURST_SRC = 3D_gpu_burst.c CL_helper.c ./util/opencl/opencl.o
 FPGA_SRC = 3D_fpga.c CL_helper.c ./util/opencl/opencl.o
@@ -18,7 +17,6 @@ FPGA_BURST_SRC = 3D_fpga_burst.c CL_helper.c ./util/opencl/opencl.o
 FPGA_SRC_OPT1 = 3D_fpga_opt1.c CL_helper.c ./util/opencl/opencl.o
 
 all: hotspot3D_gpu.exe \
-     hotspot3D_gpu_simple.exe \
      hotspot3D_gpu_opt1.exe \
      hotspot3D_gpu_burst.exe \
      hotspot3D_fpga.exe \
@@ -28,9 +26,6 @@ all: hotspot3D_gpu.exe \
 
 hotspot3D_gpu.exe: $(GPU_SRC)
 	$(CC) $(GPU_SRC) $(CCFLAGS) $(LIBS) -I$(OPENCL_INC) -L$(OPENCL_LIB) -o $@
-
-hotspot3D_gpu_simple.exe: $(GPU_SIMPLE_SRC)
-	$(CC) $(GPU_SIMPLE_SRC) $(CCFLAGS) $(LIBS) -I$(OPENCL_INC) -L$(OPENCL_LIB) -o $@
 
 hotspot3D_gpu_opt1.exe: $(GPU_SRC_OPT1)
 	$(CC) $(GPU_SRC_OPT1) $(CCFLAGS) $(LIBS) -I$(OPENCL_INC) -L$(OPENCL_LIB) -o $@
