@@ -86,21 +86,28 @@ void init_bucketsort(int listsize)
 {
     cl_uint num = 0;
     clGetPlatformIDs(0, NULL, &num);
+    printf("platform_num = %d\n", num);
     cl_platform_id platformID[num];
     clGetPlatformIDs(num, platformID, NULL);
     
-    clGetDeviceIDs(platformID[1],CL_DEVICE_TYPE_GPU,0,NULL,&num);
+    clGetDeviceIDs(platformID[0],CL_DEVICE_TYPE_GPU,0,NULL,&num);
     
     cl_device_id devices[num];
-    err = clGetDeviceIDs(platformID[1],CL_DEVICE_TYPE_GPU,num,devices,NULL);
+    err = clGetDeviceIDs(platformID[0],CL_DEVICE_TYPE_GPU,num,devices,NULL);
 //    int gpu = 1;
 //    err = clGetDeviceIDs(NULL, gpu ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_CPU, 2, &device_id, NULL);
     
     if (err != CL_SUCCESS)
     {
-        printf("Error: Failed to create a device group!\n");
+        printf("Error: Failed to create a device group (init bucketsort) error %d!\n", err);
         exit(1);
+    } 
+    /*
+    else {
+        printf("Successful to create a device group (init bucketsort)\n");
     }
+    */
+
     char name[128];
     
     
@@ -199,23 +206,28 @@ void histogramInit(int listsize) {
     cl_platform_id platformID[num];
     clGetPlatformIDs(num, platformID, NULL);
     
-    clGetDeviceIDs(platformID[1],CL_DEVICE_TYPE_GPU,0,NULL,&num);
+    clGetDeviceIDs(platformID[0],CL_DEVICE_TYPE_GPU,0,NULL,&num);
     
     char name[128];
     
-    clGetPlatformInfo(platformID[1], CL_PLATFORM_PROFILE,128,name,NULL);
+    clGetPlatformInfo(platformID[0], CL_PLATFORM_PROFILE,128,name,NULL);
     
     
     cl_device_id devices[num];
-    err = clGetDeviceIDs(platformID[1],CL_DEVICE_TYPE_GPU,num,devices,NULL);
+    err = clGetDeviceIDs(platformID[0],CL_DEVICE_TYPE_GPU,num,devices,NULL);
     //    int gpu = 1;
     //    err = clGetDeviceIDs(NULL, gpu ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_CPU, 2, &device_id, NULL);
     
     if (err != CL_SUCCESS)
     {
-        printf("Error: Failed to create a device group!\n");
+        printf("Error: Failed to create a device group (init histogram) error %d!\n", err);
         exit(1);
+    } 
+    /*
+    else {
+        printf("Successful to create a device group (init histogram)\n");
     }
+    */
     
     clGetDeviceInfo(devices[0],CL_DEVICE_NAME,128,name,NULL);
     
@@ -224,7 +236,8 @@ void histogramInit(int listsize) {
     cl_context_properties contextProperties[] =
     {
         CL_CONTEXT_PLATFORM,
-        (cl_context_properties)platformID[num],
+        //(cl_context_properties)platformID[num],
+        (cl_context_properties)platformID[0],
         0
     };
     
@@ -252,7 +265,7 @@ void histogramInit(int listsize) {
     histoProgram = clCreateProgramWithSource(histoContext, 1, (const char **) &source_str, (const size_t)&source_size, &err);
     if (!histoProgram)
     {
-        printf("Error: Failed to create compute program!\n");
+        printf("Error: Failed to create compute program! error %d\n", err);
         exit(1);
     }
 
