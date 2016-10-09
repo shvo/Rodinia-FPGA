@@ -6,8 +6,12 @@ CLFLAGS := -s --xdevice $(DSA)
 
 all : kmeans_kernel_c_default.xclbin \
       kmeans_swap_default.xclbin \
+      kemans_kernels.xclbin
 
 .PHONY : all
+
+kmeans_kernels.xclbin: ./kmeans.cl
+	$(XOCC) $(CLFLAGS) $< -o $@ ;\
 
 kmeans_kernel_c_default.xclbin: ./kmeans.cl
 	$(XOCC) $(CLFLAGS) --nk kmeans_kernel_c:1 -k kmeans_kernel_c $< -o $@ ;\
