@@ -8,13 +8,13 @@ CXXFLAGS = -I$(OPENCL_INC) -c $(DEBUGFLAGS)
 LINKFLAGS = -L$(OPENCL_LIB)
 
 # link objects(binaries) together
-a.out: main.o OpenCL.o
-	$(CXX) main.o OpenCL.o $(LINKFLAGS) -o pathfinder
+pathfinder_gpu.exe: main.o OpenCL_gpu.o
+	$(CXX) main.o OpenCL_gpu.o $(LINKFLAGS) -o $@
 
 # compile main function file into object (binary)
-main.o: main.cpp OpenCL.cpp kernels.cl
-	$(CXX) $(CXXFLAGS) main.cpp OpenCL.cpp
+main.o: main.cpp OpenCL_gpu.cpp
+	$(CXX) $(CXXFLAGS) main.cpp OpenCL_gpu.cpp
 
 clean:
 	clear
-	@rm -f pathfinder *.o *.out *~ *\#
+	@rm -f *.exe *.o *.out *~ *\#

@@ -46,5 +46,5 @@ private:
 	cl_program              program;
 	
 	void getDevices(cl_device_type deviceType);
-	void buildKernel();
+	void buildKernel(int);
 };
