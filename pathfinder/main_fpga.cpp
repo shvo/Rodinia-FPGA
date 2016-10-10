@@ -103,7 +103,7 @@ int main(int argc, char** argv)
 
 	// Create and initialize the OpenCL object.
 	OpenCL cl(1);  // 1 means to display output (debugging mode).
-	cl.init(1);    // 1 means to use GPU. 0 means use CPU.
+	cl.init(2);    // 0 means to use GPU. 1 means use CPU. 2 means to use FPGA
 	cl.gwSize(rows * cols);
 
 	// Create and build the kernel.
@@ -145,6 +145,7 @@ int main(int argc, char** argv)
 	int src = 1, final_ret = 0;
 	for (int t = 0; t < rows - 1; t += pyramid_height)
 	{
+                printf("t = %d\n", t);
 		int temp = src;
 		src = final_ret;
 		final_ret = temp;

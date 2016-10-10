@@ -1,0 +1,2 @@
+#./pathfinder_fpga.exe 100000 100 20 > result.txt
+./pathfinder_fpga.exe 100000 100 20
