@@ -16,7 +16,7 @@
 #define MAXBLOCKS 65536
 //#define PROFILE_TMP
 #define __CL_ENABLE_EXCEPTIONS
-#include "CLHelper.h"
+#include "CLHelper_gpu.h"
 typedef struct {
   float weight;
   long assign;  /* number of point where this one is assigned */

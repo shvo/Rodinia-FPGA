@@ -20,8 +20,8 @@
 ***********************************************/
 
 #include "streamcluster.h"
-#include "CLHelper.h"
-#include "streamcluster_cl.h"
+#include "CLHelper_gpu.h"
+#include "streamcluster_cl_gpu.h"
 
 using namespace std;
 
