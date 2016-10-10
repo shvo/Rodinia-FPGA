@@ -45,6 +45,49 @@ cl_event mergePassEvent;
 cl_event mergePackEvent;
 double mergesum = 0;
 
+
+static void* smalloc(size_t size) {
+	void* ptr;
+
+	ptr = malloc(size);
+
+	if (ptr == NULL) {
+		printf("Error: Cannot allocate memory\n");
+		printf("Test failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return ptr;
+}
+
+static int load_file_to_memory(const char *filename, char **result) {
+	unsigned int size;
+
+	FILE *f = fopen(filename, "rb");
+	if (f == NULL) {
+		*result = NULL;
+		printf("Error: Could not read file %s\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	*result = (char *) smalloc(sizeof(char)*(size+1));
+
+	if (size != fread(*result, sizeof(char), size, f)) {
+		free(*result);
+		printf("Error: read of kernel failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	fclose(f);
+	(*result)[size] = 0;
+
+	return size;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // The mergesort algorithm
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,9 +96,9 @@ void init_mergesort(int listsize){
     clGetPlatformIDs(0,NULL,&num);
     cl_platform_id platformID[num];
     clGetPlatformIDs(num,platformID,NULL);
-    clGetDeviceIDs(platformID[0],CL_DEVICE_TYPE_GPU,0,NULL,&num);
+    clGetDeviceIDs(platformID[2],CL_DEVICE_TYPE_ACCELERATOR,0,NULL,&num);
     cl_device_id devices[num];
-    err = clGetDeviceIDs(platformID[0],CL_DEVICE_TYPE_GPU,num,devices,NULL);
+    err = clGetDeviceIDs(platformID[2],CL_DEVICE_TYPE_ACCELERATOR,num,devices,NULL);
     
     if (err != CL_SUCCESS)
     {
@@ -78,6 +121,25 @@ void init_mergesort(int listsize){
     d_orig = clCreateBuffer(mergeContext,CL_MEM_READ_WRITE, listsize * sizeof(float),NULL,NULL);
     d_res = clCreateBuffer(mergeContext,CL_MEM_READ_WRITE, listsize * sizeof(float),NULL,NULL);
     
+
+    // create program from binary
+    char * krnl_file = "./binary/mergesort_kernels.xclbin";
+    char *krnl_bin;
+    const size_t krnl_size = load_file_to_memory(krnl_file, &krnl_bin);
+
+    err = 0;
+    mergeProgram = clCreateProgramWithBinary(mergeContext, 1,
+	                            &devices[0], &krnl_size,
+	                            (const unsigned char**) &krnl_bin,
+	                            NULL, &err);
+    if ((!mergeProgram) || (err!=CL_SUCCESS)) {
+        printf("Error: Failed to create compute program from binary %d!\n",
+	      err);
+	printf("Test failed\n");
+	exit(EXIT_FAILURE);
+    }
+
+    /*
     FILE *fp;
     const char fileName[]="./mergesort.cl";
     size_t source_size;
@@ -100,6 +162,7 @@ void init_mergesort(int listsize){
         printf("Error: Failed to create merge compute program!\n");
         exit(1);
     }
+    */
     
     err = clBuildProgram(mergeProgram, 0, NULL, NULL, NULL, NULL);
     if (err != CL_SUCCESS)
@@ -123,7 +186,7 @@ void finish_mergesort() {
     clReleaseMemObject(d_origList_first_buff);
     clReleaseMemObject(d_resultList_first_buff);
     clReleaseProgram(mergeProgram);
-    clReleaseKernel(mergeFirstKernel);
+    //clReleaseKernel(mergeFirstKernel);
     clReleaseCommandQueue(mergeCommands);
     clReleaseContext(mergeContext);
 }

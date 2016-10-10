@@ -183,7 +183,7 @@ void init_bucketsort(int listsize)
     bucketOutput = clCreateBuffer(bucketContext, CL_MEM_READ_WRITE, (listsize + (DIVISIONS*4))*sizeof(float), NULL, NULL);
 
     // create program from binary
-    char * krnl_file = "./binary/hybridsort_kernels.xclbin";
+    char * krnl_file = "./binary/bucketsort_kernels.xclbin";
     char *krnl_bin;
     const size_t krnl_size = load_file_to_memory(krnl_file, &krnl_bin);
 
