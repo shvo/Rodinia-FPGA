@@ -217,12 +217,12 @@ void init_bucketsort(int listsize)
 	fclose(fp);
     
     bucketProgram = clCreateProgramWithSource(bucketContext, 1, (const char **) &source_str, (const size_t)&source_size, &err);
-    */
     if (!bucketProgram)
     {
         printf("Error: Failed to create bucket compute program!\n");
         exit(1);
     }
+    */
     
     err = clBuildProgram(bucketProgram, 0, NULL, NULL, NULL, NULL);
     if (err != CL_SUCCESS)
@@ -251,15 +251,25 @@ void finish_bucketsort()
     clReleaseMemObject(d_input_buff);
     clReleaseMemObject(d_indice_input_buff);
     clReleaseMemObject(bucketOutput);
+    printf("buffs are all released\n");
     clReleaseProgram(bucketProgram);
+    printf("bucketProgram is released\n");
+    /*
     clReleaseKernel(bucketcountKernel);
+    printf("bucketcountKernel is released\n");
     clReleaseKernel(bucketprefixKernel);
+    printf("bucketprefixKernel is released\n");
     clReleaseKernel(bucketsortKernel);
+    printf("bucketsortKernel is released\n");
+    */
     clReleaseCommandQueue(bucketCommands);
+    printf("bucketCommands is released\n");
     clReleaseContext(bucketContext);
-	free(pivotPoints);
-	free(h_offsets);
-	free(historesult);
+    printf("kernels are all released\n");
+    free(pivotPoints);
+    free(h_offsets);
+    free(historesult);
+    printf("the remainings are all released\n");
 }
 
 void histogramInit(int listsize) {

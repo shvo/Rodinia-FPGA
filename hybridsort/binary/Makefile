@@ -4,9 +4,13 @@ DSA := xilinx:adm-pcie-7v3:1ddr:3.0
 XOCC := $(XILINX_SDACCEL)/bin/xocc
 CLFLAGS := -s --xdevice $(DSA)
 
-all : hybridsort_kernels.xclbin\
+all : bucketsort_kernels.xclbin\
+      mergesort_kernels.xclbin\
 
 .PHONY : all
 
-hybridsort_kernels.xclbin: ./bucketsort_kernels.cl
+bucketsort_kernels.xclbin: ./bucketsort_kernels.cl
+	$(XOCC) $(CLFLAGS) $< -o $@ ;\
+
+mergesort_kernels.xclbin: ./mergesort.cl
 	$(XOCC) $(CLFLAGS) $< -o $@ ;\

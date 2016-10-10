@@ -135,8 +135,11 @@ int main(int argc, char** argv)
     unsigned int *origOffsets = (unsigned int *) malloc((DIVISIONS + 1) * sizeof(int));
     clock_t bucketsort_start = clock();
     bucketSort(cpu_idata,d_output,numElements,sizes,nullElements,datamin,datamax, origOffsets);
+    printf("bucketsort is executed\n");
     clock_t bucketsort_diff = clock() - bucketsort_start;
+    printf("time is recorded\n");
     finish_bucketsort();
+    printf("bucketsort is finished\n");
     double bucketTime = getBucketTime();
 
     cl_float4 *d_origList = (cl_float4*) d_output;
@@ -146,8 +149,10 @@ int main(int argc, char** argv)
     for(int i = 0; i < DIVISIONS; i++){
         newlistsize += sizes[i] * 4;
     }
-    
+
+    printf("begin to initialize mergesort\n");   
     init_mergesort(newlistsize);
+    printf("init_mergesort is successfully\n");
     clock_t mergesort_start = clock();
     cl_float4 *mergeresult = runMergeSort(newlistsize,DIVISIONS,d_origList,d_resultList,sizes,nullElements,origOffsets);
     clock_t mergesort_diff = clock() - mergesort_start;
