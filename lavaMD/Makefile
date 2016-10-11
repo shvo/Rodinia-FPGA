@@ -23,12 +23,12 @@ all: lavaMD_gpu.exe \
      lavaMD_fpga.exe
 
 # link objects together
-lavaMD_gpu.exe:		main.o \
+lavaMD_gpu.exe:		main_gpu.o \
 			./kernel/kernel_gpu_opencl_wrapper.o \
 			./util/num/num.o \
 			./util/timer/timer.o \
 			./util/opencl/opencl.o
-	$(C_C)	main.o \
+	$(C_C)	main_gpu.o \
 			./kernel/kernel_gpu_opencl_wrapper.o \
 			./util/num/num.o \
 			./util/timer/timer.o \
@@ -38,13 +38,13 @@ lavaMD_gpu.exe:		main.o \
 			-o $@
 
 # link objects together
-lavaMD_fpga.exe:	main.o \
-			./kernel/kernel_gpu_opencl_wrapper.o \
+lavaMD_fpga.exe:	main_fpga.o \
+			./kernel/kernel_fpga_opencl_wrapper.o \
 			./util/num/num.o \
 			./util/timer/timer.o \
 			./util/opencl/opencl.o
-	$(C_C)	main.o \
-			./kernel/kernel_gpu_opencl_wrapper.o \
+	$(C_C)	main_fpga.o \
+			./kernel/kernel_fpga_opencl_wrapper.o \
 			./util/num/num.o \
 			./util/timer/timer.o \
 			./util/opencl/opencl.o \
@@ -53,8 +53,8 @@ lavaMD_fpga.exe:	main.o \
 			-o $@
 
 # compile function files into objects
-main.o:		main.h \
-			main.c \
+main_gpu.o:		main.h \
+			main_gpu.c \
 			./kernel/kernel_gpu_opencl_wrapper.h \
 			./kernel/kernel_gpu_opencl_wrapper.c \
 			./util/num/num.h \
@@ -63,9 +63,9 @@ main.o:		main.h \
 			./util/timer/timer.c \
 			./util/opencl/opencl.h \
 			./util/opencl/opencl.c
-	$(C_C)	$(OUTPUT) $(KERNEL_DIM) main.c \
+	$(C_C)	$(OUTPUT) $(KERNEL_DIM) main_gpu.c \
 			-c \
-			-o main.o \
+			-o $@ \
 			-O3
 
 ./kernel/kernel_gpu_opencl_wrapper.o:	./kernel/kernel_gpu_opencl_wrapper.h \
@@ -73,7 +73,29 @@ main.o:		main.h \
 	$(C_C)	$(KERNEL_DIM)						./kernel/kernel_gpu_opencl_wrapper.c \
 										$(OCL_INC) \
 										-c \
-										-o ./kernel/kernel_gpu_opencl_wrapper.o \
+										-o $@ \
+										-O3
+main_fpga.o:		main.h \
+			main_fpga.c \
+			./kernel/kernel_gpu_opencl_wrapper.h \
+			./kernel/kernel_fpga_opencl_wrapper.c \
+			./util/num/num.h \
+			./util/num/num.c \
+			./util/timer/timer.h \
+			./util/timer/timer.c \
+			./util/opencl/opencl.h \
+			./util/opencl/opencl.c
+	$(C_C)	$(OUTPUT) $(KERNEL_DIM) main_fpga.c \
+			-c \
+			-o $@ \
+			-O3
+
+./kernel/kernel_fpga_opencl_wrapper.o:	./kernel/kernel_gpu_opencl_wrapper.h \
+										./kernel/kernel_fpga_opencl_wrapper.c
+	$(C_C)	$(KERNEL_DIM)						./kernel/kernel_fpga_opencl_wrapper.c \
+										$(OCL_INC) \
+										-c \
+										-o $@ \
 										-O3
 
 ./util/num/num.o:	./util/num/num.h \

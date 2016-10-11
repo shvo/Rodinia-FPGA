@@ -36,6 +36,48 @@ extern "C" {
 //	KERNEL_GPU_OPENCL_WRAPPER FUNCTION
 //========================================================================================================================================================================================================200
 
+static void* smalloc(size_t size) {
+	void* ptr;
+
+	ptr = malloc(size);
+
+	if (ptr == NULL) {
+		printf("Error: Cannot allocate memory\n");
+		printf("Test failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return ptr;
+}
+
+static int load_file_to_memory(const char *filename, char **result) {
+	unsigned int size;
+
+	FILE *f = fopen(filename, "rb");
+	if (f == NULL) {
+		*result = NULL;
+		printf("Error: Could not read file %s\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	*result = (char *) smalloc(sizeof(char)*(size+1));
+
+	if (size != fread(*result, sizeof(char), size, f)) {
+		free(*result);
+		printf("Error: read of kernel failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	fclose(f);
+	(*result)[size] = 0;
+
+	return size;
+}
+
 void 
 kernel_gpu_opencl_wrapper(	par_str par_cpu,
 							dim_str dim_cpu,
@@ -91,8 +133,8 @@ kernel_gpu_opencl_wrapper(	par_str par_cpu,
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
 
-	// Select the 1st platform
-	cl_platform_id platform = platforms[0];
+	// Select the 3rd platform
+	cl_platform_id platform = platforms[2];
 
 	// Get the name of the selected platform and print it (if there are multiple platforms, choose the first one)
 	char pbuf[100];
@@ -114,10 +156,10 @@ kernel_gpu_opencl_wrapper(	par_str par_cpu,
 													(cl_context_properties) platform, 
 													0};
 
-	// Create context for selected platform being GPU
+        // Create context for selected platform being FPGA
 	cl_context context;
 	context = clCreateContextFromType(	context_properties, 
-										CL_DEVICE_TYPE_GPU, 
+										CL_DEVICE_TYPE_ACCELERATOR, 
 										NULL, 
 										NULL, 
 										&error);
@@ -168,17 +210,17 @@ kernel_gpu_opencl_wrapper(	par_str par_cpu,
 
 	// Create a command queue
 	cl_command_queue command_queue;
-	command_queue = clCreateCommandQueue(	context, 
-											device, 
-											0, 
-											&error);
+        printf("begin to create commandqueue\n");
+	command_queue = clCreateCommandQueue(context, device, 0, &error);
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
+        printf("commandqueue is created\n");
 
 	//====================================================================================================100
 	//	CRATE PROGRAM, COMPILE IT
 	//====================================================================================================100
 
+        /*
 	// Load kernel source code from file
 	const char *source = load_kernel_source("./kernel/kernel_gpu_opencl.cl");
 	size_t sourceSize = strlen(source);
@@ -189,6 +231,17 @@ kernel_gpu_opencl_wrapper(	par_str par_cpu,
 													&source, 
 													&sourceSize, 
 													&error);
+        */
+        char *krnl_file = "./binary/lavaMD_default.xclbin";
+        char *krnl_bin;
+	const size_t krnl_size = load_file_to_memory(krnl_file, &krnl_bin);
+
+        printf("begin to program with binary\n");
+        cl_program program = clCreateProgramWithBinary(context, 1,
+	                                 devices, &krnl_size,
+	                                 (const unsigned char**) &krnl_bin,
+	                                 NULL, &error);
+
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
 
@@ -429,6 +482,7 @@ kernel_gpu_opencl_wrapper(	par_str par_cpu,
 					sizeof(cl_mem), 
 					(void *) &d_fv_gpu);
 
+        printf("launch kernel\n");
 	// launch kernel - all boxes
 	error = clEnqueueNDRangeKernel(	command_queue, 
 									kernel, 
@@ -446,6 +500,8 @@ kernel_gpu_opencl_wrapper(	par_str par_cpu,
 	error = clFinish(command_queue);
 	if (error != CL_SUCCESS) 
 		fatal_CL(error, __LINE__);
+
+        printf("kernel is finished\n");
 
 	time4 = get_time();
 
