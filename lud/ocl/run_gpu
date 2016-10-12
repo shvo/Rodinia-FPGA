@@ -1,0 +1,2 @@
+./lud_gpu.exe -i ../../../data/lud/256.dat 
+#./lud_gpu.exe -s 1024 -v
