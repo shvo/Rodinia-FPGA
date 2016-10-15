@@ -1,7 +1,7 @@
 include ../../../common/make.config
 
-INC = -I$(OPENCL_INC) -I../common
-LIB = -L$(OPENCL_LIB)
+#INC = -I$(OPENCL_INC) -I../common
+#LIB = -L$(OPENCL_LIB)
 
 #C compiler
 CC = g++
@@ -19,7 +19,7 @@ lud_gpu.exe: lud_gpu.cpp
 	$(CC) $(KERNEL_DIM) $(CC_FLAGS) -o $@ lud_gpu.cpp ../common/common.c $(INC) $(LIB) -lOpenCL
 
 lud_fpga.exe: lud_fpga.cpp
-	$(CC) $(KERNEL_DIM) $(CC_FLAGS) -o $@ lud_fpga.cpp ../common/common.c $(INC) $(LIB) -I$(XILINX_OPENCL_INC) -L$(XILINX_OPENCL_LIB) -lxilinxopencl
+	$(CC) $(KERNEL_DIM) $(CC_FLAGS) lud_fpga.cpp ../common/common.c -I../common -o $@  -I$(XILINX_OPENCL_INC) -L$(XILINX_OPENCL_LIB) -lxilinxopencl
 
 clean:
 	rm -f *.exe

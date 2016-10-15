@@ -92,21 +92,26 @@ static int load_file_to_memory(const char *filename, char **result) {
 	return size;
 }
 
-static int initialize(int use_gpu)
+static int initialize(int use_device)
 {
 	cl_int result;
 	size_t size;
 
 	// create OpenCL context
-        cl_uint num = 0;
-        clGetPlatformIDs(0, NULL, &num);
-        printf("platform_num = %d\n", num);
-	cl_platform_id platform_id[num];
-	if (clGetPlatformIDs(num, platform_id, NULL) != CL_SUCCESS) { printf("ERROR: clGetPlatformIDs(1,*,0) failed\n"); return -1; }
-	cl_context_properties ctxprop[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform_id[2], 0};
-	device_type = use_gpu ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_ACCELERATOR;
-	context = clCreateContextFromType( ctxprop, device_type, NULL, NULL, NULL );
-	if( !context ) { printf("ERROR: clCreateContextFromType(%s) failed\n", use_gpu ? "GPU" : "FPGA"); return -1; }
+	cl_platform_id platform_id;
+	if (clGetPlatformIDs(1, &platform_id, NULL) != CL_SUCCESS) { printf("ERROR: clGetPlatformIDs(1,*,0) failed\n"); return -1; }
+	cl_context_properties ctxprop[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)platform_id, 0};
+	//device_type = use_device ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_CPU;
+        printf("use device = %d\n", use_device);
+        switch(use_device) {
+            case 0: device_type = CL_DEVICE_TYPE_CPU; break;
+            case 1: device_type = CL_DEVICE_TYPE_GPU; break;
+            case 2: device_type = CL_DEVICE_TYPE_ACCELERATOR; break;
+        }
+        printf("begin to CreateContextFromType\n");
+	context = clCreateContextFromType( ctxprop, device_type, NULL, NULL,&result );
+	if( !context ) { printf("ERROR %d: clCreateContextFromType(%s) failed\n", result, use_device ? "GPU" : "CPU"); return -1; }
+        printf("finshied CreateContextFromType\n");
 
 	// get the list of GPUs
 	result = clGetContextInfo( context, CL_CONTEXT_DEVICES, 0, NULL, &size );
@@ -115,6 +120,7 @@ static int initialize(int use_gpu)
 	
 	if( result != CL_SUCCESS || num_devices < 1 ) { printf("ERROR: clGetContextInfo() failed\n"); return -1; }
 	device_list = new cl_device_id[num_devices];
+	//device_list = (cl_device_id *)malloc(sizeof(cl_device_id)*num_devices);
 	if( !device_list ) { printf("ERROR: new cl_device_id[] failed\n"); return -1; }
 	result = clGetContextInfo( context, CL_CONTEXT_DEVICES, size, device_list, NULL );
 	if( result != CL_SUCCESS ) { printf("ERROR: clGetContextInfo() failed\n"); return -1; }
@@ -245,13 +251,13 @@ main ( int argc, char *argv[] )
         */
 
 	// Use 1: GPU  0: FPGA
-	int use_gpu = 0;
+	int use_gpu = 2;
 	// OpenCL initialization
 	if(initialize(use_gpu)) return -1;
 
 	// compile kernel
 	cl_int err = 0;
-        char *krnl_file = "lud_kernel.xclbin";
+        char *krnl_file = "./binary/lud_kernel.xclbin";
         char *krnl_bin;
 	const size_t krnl_size = load_file_to_memory(krnl_file, &krnl_bin);
         cl_program prog = clCreateProgramWithBinary(context, 1,
@@ -263,7 +269,7 @@ main ( int argc, char *argv[] )
 	cl_program prog = clCreateProgramWithSource(context, 1, slist, NULL, &err);
         */
 
-	if(err != CL_SUCCESS) { printf("ERROR: clCreateProgramWithSource() => %d\n", err); return -1; }
+	if(err != CL_SUCCESS) { printf("ERROR: clCreateProgramWithBinary() => %d\n", err); return -1; }
 	char clOptions[110];
 	//  sprintf(clOptions,"-I../../src"); 
 	sprintf(clOptions," ");
@@ -285,10 +291,12 @@ main ( int argc, char *argv[] )
 	cl_kernel perimeter;
 	cl_kernel internal;
 	diagnal   = clCreateKernel(prog, kernel_lud_diag, &err);  
+	if(err != CL_SUCCESS) { printf("ERROR: diagnal clCreateKernel() 0 => %d\n", err); return -1; }
 	perimeter = clCreateKernel(prog, kernel_lud_peri, &err);  
+	if(err != CL_SUCCESS) { printf("ERROR: perimeter clCreateKernel() 0 => %d\n", err); return -1; }
 	internal  = clCreateKernel(prog, kernel_lud_inter, &err);  
-	if(err != CL_SUCCESS) { printf("ERROR: clCreateKernel() 0 => %d\n", err); return -1; }
-	clReleaseProgram(prog);
+	if(err != CL_SUCCESS) { printf("ERROR: internal clCreateKernel() 0 => %d\n", err); return -1; }
+	/*clReleaseProgram(prog);*/
   
 	//size_t local_work[3] = { 1, 1, 1 };
 	//size_t global_work[3] = {1, 1, 1 }; 
